@@ -4,10 +4,9 @@
 (require net/url)
 (require file/gunzip)
 (require srfi/1)
-(require (prefix-in taglib: "taglib-2.scm"))
+(require (prefix-in taglib: "taglib.scm"))
 (require (lib "process.ss"))
 (require (lib "file.ss"))
-;(require (lib "url.ss" "net"))
 
 ; Album Mode
 ; Unrelated Mode
@@ -21,22 +20,34 @@
     (newline)))
 
 (define (process-files . args)
-  (confirm-release 
-  (histogram (sort (map get-album args) string<?))))
+  (cond
+   ((null? args)  #f)
+   (else
+     (say
+      (confirm-release
+       (sort
+        (histogram (sort (map get-album args) string<?))
+        frequency>?))))))
+
+(define (just-one? hist) (= (length hist) 1))
+
+(define (confirm-release hist)
+  (cond
+   ((just-one? hist) (caar hist))
+   (else
+    (say "Tag disparity detected.")
+    
+    (let ((v (list->vector hist)))
+      (for-each say (format-histogram hist))
+      (let ((i (ask "Which release?" 1)))
+        (car (vector-ref v (- i 1))))))))
+
+(define (frequency>? x y) (> (cdr x) (cdr y)))
 
 (define (format-histogram hist)
   (map (lambda (c s n) (format "~a. ~a (~a)" c s n))
        (iota (+ (length hist) 1) 1)
        (map car hist) (map cdr hist)))
-
-(define (confirm-release hist)
-  (say
-  (if (> (length hist) 1)
-      (begin
-        (for-each say (format-histogram hist))
-        (say "Tag disparity detected.")
-        (ask "Which release is correct?" (caar hist)))
-      (caar hist))))
 
 ; This is roughly a histogram, anyway - call it with a sorted list.
 ; It returns an alist of (item . frequency)

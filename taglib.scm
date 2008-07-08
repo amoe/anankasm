@@ -1,6 +1,6 @@
 ; taglib.scm - interface to taglib c api
 
-(module taglib-2 scheme
+(module taglib scheme
   (require scheme/foreign)
   (provide (except-out (all-defined-out) lib))
 
