@@ -1,12 +1,15 @@
-#lang scheme
-
 ; taglib.scm - interface to taglib c api
 
-(module taglib mzscheme
-  (require (lib "foreign.ss"))
-  (provide (all-defined-except lib))
+(module taglib-2 scheme
+  (require scheme/foreign)
+  (provide (except-out (all-defined-out) lib))
 
-  ; XXX: is this okay?
+; <eli> So -- if you use the foreign interface, it is your responsibility
+;       to write code that use the librry correctly and avoids all
+;       segfaults.
+; <eli> In some cases you can't do that -- for example, you provide a raw
+;       interface to some library -- in those cases you'd protect your own
+;       exported names with an `unsafe!'
   (unsafe!)
 
   ; TODO: make macro like so
