@@ -68,6 +68,7 @@
 
 
   ; file api
+  ; XXX: we need to error properly on #f return.
   (define file-new
     (get-ffi-obj "taglib_file_new" lib
                  (_fun _path -> _tl-file-pointer)))

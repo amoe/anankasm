@@ -1,16 +1,106 @@
-(require xml)
 (require scheme/string)
-(require (planet neil/levenshtein:1:1/levenshtein))
+(require scheme/pretty)
+(require xml)
 (require net/url)
 (require file/gunzip)
 (require srfi/1)
-(require (prefix-in taglib: "taglib.scm"))
+
+(require (planet neil/levenshtein:1:1/levenshtein))
+
+; XXX plt v3 remnants
 (require (lib "process.ss"))
 (require (lib "file.ss"))
 
+(require (prefix-in taglib: "taglib.scm"))
+
+
+(define (test:main)
+  (main
+   "/home/amoe/music/underworld/2007-oblivion_with_bells/01-crocodile.ogg"
+   "/home/amoe/music/underworld/2007-oblivion_with_bells/02-beautiful_burnout.ogg"
+   "/home/amoe/music/sigur_ros/2007-heim/06-von.ogg"))
+
+(define *tag-map*
+  (list
+   (cons 'artist (cons taglib:tag-artist taglib:tag-set-artist))
+   (cons 'album (cons taglib:tag-album taglib:tag-set-album))
+   (cons 'date (cons taglib:tag-year taglib:tag-set-year))
+   (cons 'genre (cons taglib:tag-genre taglib:tag-set-genre))))
+
+(define (files->template . args)
+  (define tags (map
+   (lambda (x)
+     (cons (car x) (apply select-from-tags (cons (cadr x) args))))
+   *tag-map*))
+     
+  (define tracks
+    (map
+     (lambda (x) (tag-proc/cleanup taglib:tag-title x))
+     args))
+
+  (pretty-print (cons tags tracks)))
+
+(define (select-from-tags get-tag . args)
+  (let ((tags (map (lambda (f) (tag-proc/cleanup get-tag f)) args)))
+    (let ((hist (sort (histogram tags) frequency>?)))
+      (if (just-one? hist)
+          (caar hist)
+          (ask-menu hist)))))
+
+(define (ask-menu hist)
+  (print-histogram hist)
+  (let ((answer (ask "Which tag is correct?" 1)))
+    (car (list-ref hist (- answer 1)))))
+
+(define (just-one? lst) (= (length lst) 1))
+
+(define (ask question default)
+  (display
+    (format "~a [~a] " question default))
+  (flush-output)
+  (read))
+
+(define (print-histogram hist)
+  (for-each
+    (lambda (n x f)
+      (display
+        (format "~a. ~a (~a)~n"
+                n x f)))
+    (iota (+ (length hist) 1) 1)
+    (map car hist) (map cdr hist)))
+
+(define (tag-proc/cleanup get-tag file)
+  (let ((f (taglib:file-new file)))
+    (let ((datum (get-tag (taglib:file-tag f))))
+      (taglib:file-free f)
+      datum)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;   NEXT:
+; Implement mode that skips lookup, fills in template based on tags,
+; and dumps you into editor.
+
 ; Album Mode
 ; Unrelated Mode
-; -- skips discogs search and dumps you into an editor
+; -- skips discogs search and dumps you into an editor w/current tags
 
 (define *debug-mode* #t)
 
@@ -19,15 +109,19 @@
     (display msg)
     (newline)))
 
+(define (main-2 . args)
+  (let ((release (apply process-files args)))
+    (handle-search-results
+     (fetch (construct-search-query release "releases")))))
+
 (define (process-files . args)
   (cond
-   ((null? args)  #f)
+   ((null? args)  (error "no files given on command line"))
    (else
-     (say
-      (confirm-release
-       (sort
-        (histogram (sort (map get-album args) string<?))
-        frequency>?))))))
+    (confirm-release
+     (sort
+      (histogram (sort (map get-album args) string<?))
+      frequency>?)))))
 
 (define (just-one? hist) (= (length hist) 1))
 
@@ -111,7 +205,7 @@
 ;(when (not e)
   ;(error "please define EDITOR in the environment"))
 
-(define (main . args)
+(define (_main . args)
   (for-each
    (lambda (x)
      (handle-search-results
@@ -138,18 +232,6 @@
           (assq 'uri
                 (children (vector-ref rv (- i 1))))))))))
 
-
-; unbreak repl
-(define (flush-and-read-line)
-  (let ((buf (make-bytes 10)))
-    (lambda ()
-      (let loop ()
-        (let ((n (read-bytes-avail!* buf)))
-          (unless (or (eof-object? n) (zero? (read-bytes-avail!* buf)))
-            (loop))))))
-
-  (read-line))
-
 (define (fetch-release uri)
   (let ((u (uri->api-uri uri)))
     (say (format "fetching ~a" u))
@@ -167,20 +249,18 @@
          (assq 'artists
                (children (first-child x-release)))))
    " / "))
-               
-  
 
 (define (format-release number name)
   (format "~a. ~a" (number->string number) name))
 
-(define (ask msg default)
-  (display (format "~a [~a]  "
-                   msg default))
-  (flush-output)
-  (read))
-
+; r5rs say
 (define (say msg)
   (display msg)
+  (newline))
+
+; super-say
+(define (say . args)
+  (display (apply format args))
   (newline))
 
 (define (handle input-port)
@@ -207,8 +287,7 @@
     (system (format "mp3gain -s r -o ~a" tmp))
     (delete-file tmp)))
 
-(define main process-files)
-
+(define main files->template)
 (apply main (vector->list (current-command-line-arguments)))
 
 ;(file-stream-buffer-mode (current-input-port) 'none)
