@@ -3,16 +3,18 @@
 (require xml)
 (require net/url)
 (require file/gunzip)
-(require srfi/1)
+(require srfi/1)   ; list library
+(require srfi/26)  ; cut & cute
+(require scheme/system)
 
 (require (planet neil/levenshtein:1:1/levenshtein))
 
-; XXX plt v3 remnants
-(require (lib "process.ss"))
-(require (lib "file.ss"))
-
 (require (prefix-in taglib: "taglib.scm"))
 
+; orange JUICE
+; orange JUICE
+; orange JUICE
+; for life!
 
 (define (test:main)
   (main
@@ -35,10 +37,51 @@
      
   (define tracks
     (map
-     (lambda (x) (tag-proc/cleanup taglib:tag-title x))
+     (lambda (x)
+       (cons (tag-proc/cleanup taglib:tag-track x)
+             (tag-proc/cleanup taglib:tag-title x)))
      args))
 
-  (pretty-print (cons tags tracks)))
+  (cons tags tracks))
+
+(define (pass-to-editor datum)
+  (let ((path (make-temporary-file "naturalize-~a.scm")))
+    (let ((out (open-output-file path #:exists 'truncate)))
+      (pretty-print datum out)
+      (close-output-port out)
+
+      (run-editor path)
+
+      (let ((result (read (open-input-file path))))
+        (delete-file path)
+        result))))
+
+(define (main . args)
+  (preserve-mtimes
+   (lambda ()
+     (let ((tmpl (pass-to-editor (apply files->template args))))
+       (apply-templates tmpl args)))
+   args))
+
+
+(define (preserve-mtimes proc files)
+  (let ((times (save-mtimes files)))
+    (proc)
+    (load-mtimes files times)))
+
+(define (save-mtimes files)
+  (map file-or-directory-modify-seconds files))
+
+(define (load-mtimes files times)
+  (for-each file-or-directory-modify-seconds files times))
+
+
+(define (run-editor file)
+  (say "invoking editor: ~a" file)
+  (system* (get-editor) (path->string file)))
+
+(define (get-editor)
+  (or (getenv "EDITOR") "/usr/bin/nano"))
 
 (define (select-from-tags get-tag . args)
   (let ((tags (map (lambda (f) (tag-proc/cleanup get-tag f)) args)))
@@ -69,12 +112,51 @@
     (iota (+ (length hist) 1) 1)
     (map car hist) (map cdr hist)))
 
-(define (tag-proc/cleanup get-tag file)
+(define (tag-proc/cleanup proc file)
   (let ((f (taglib:file-new file)))
-    (let ((datum (get-tag (taglib:file-tag f))))
+    (let ((datum (proc (taglib:file-tag f))))
+      (taglib:file-save f)
       (taglib:file-free f)
       datum)))
 
+(define template:global-tags car)
+(define template:local-tags  cdr)
+
+(define (apply-templates tmpl files)
+  (say "applying template: ~a" tmpl)
+
+  (for-each
+   (lambda (t) (apply-one-tag t files))
+   (template:global-tags tmpl))
+
+  (apply-local-tags (template:local-tags tmpl) files))
+
+(define local-tag:tracknumber car)
+(define local-tag:title       cdr)
+
+(define (apply-local-tags lt files)
+  (for-each
+   (lambda (tag file)
+     (tag-proc/cleanup
+       (lambda (t)
+         (taglib:tag-set-track t (local-tag:tracknumber tag))
+         (taglib:tag-set-title t (local-tag:title tag)))
+       file))
+   lt files))
+     
+
+(define (apply-one-tag tag files)
+  (say "applying tag: ~a" tag)
+  (for-each
+   (lambda (file)
+    (tag-proc/cleanup
+     (let ((set-tag (lookup-setter (car tag))))
+       (lambda (t) (set-tag t (cdr tag))))
+     file))
+   files))
+   
+(define (lookup-setter tag)
+  (cddr (assq tag *tag-map*)))
 
 
 
@@ -82,25 +164,12 @@
 
 
 
+;;;;;;;;;;;;;;; OLD CODE
+;;;;;;;;;;;;;;;;; BEWARE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
-
-
-
-
-
-
-
-
-;   NEXT:
-; Implement mode that skips lookup, fills in template based on tags,
-; and dumps you into editor.
-
-; Album Mode
-; Unrelated Mode
-; -- skips discogs search and dumps you into an editor w/current tags
 
 (define *debug-mode* #t)
 
@@ -287,7 +356,6 @@
     (system (format "mp3gain -s r -o ~a" tmp))
     (delete-file tmp)))
 
-(define main files->template)
 (apply main (vector->list (current-command-line-arguments)))
 
 ;(file-stream-buffer-mode (current-input-port) 'none)

@@ -89,6 +89,7 @@
     (get-ffi-obj "taglib_file_audioproperties" lib
                  (_fun _tl-file-pointer -> _audioproperties-pointer)))
 
+  ; Must run file-save for changes with tag-set-* to be saved.
   (define file-save
     (get-ffi-obj "taglib_file_save" lib
                  (_fun _tl-file-pointer -> _bool)))
