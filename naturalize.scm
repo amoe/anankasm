@@ -22,27 +22,60 @@
    "/home/amoe/music/underworld/2007-oblivion_with_bells/02-beautiful_burnout.ogg"
    "/home/amoe/music/sigur_ros/2007-heim/06-von.ogg"))
 
+(define *va-mode* #f)
+
 (define *tag-map*
   (list
    (cons 'artist (cons taglib:tag-artist taglib:tag-set-artist))
    (cons 'album (cons taglib:tag-album taglib:tag-set-album))
+   (cons 'tracknumber (cons taglib:tag-track taglib:tag-set-track))
+   (cons 'title (cons taglib:tag-title taglib:tag-set-title))
    (cons 'date (cons taglib:tag-year taglib:tag-set-year))
    (cons 'genre (cons taglib:tag-genre taglib:tag-set-genre))))
 
+(define *global-tag-list*
+  (if *va-mode*
+      '(album date genre)
+      '(artist album date genre)))
+
+(define *local-tag-list*
+  (if *va-mode*
+      '(tracknumber artist title)
+      '(tracknumber title)))
+
+
 (define (files->template . args)
-  (define tags (map
-   (lambda (x)
-     (cons (car x) (apply select-from-tags (cons (cadr x) args))))
-   *tag-map*))
+  ;(define tags (map
+   ;(lambda (x)
+     
+     ;(cons (car x) (apply select-from-tags (cons (cadr x) args))))
+   
+   ;*tag-map*))
+
+  (define tags
+    (map
+     (lambda (tag)
+       (cons tag
+             (apply select-from-tags
+                    (cons (lookup-getter tag) args))))
+     *global-tag-list*))
      
   (define tracks
     (map
-     (lambda (x)
-       (cons (tag-proc/cleanup taglib:tag-track x)
-             (tag-proc/cleanup taglib:tag-title x)))
+     (lambda (file)
+       (map
+        (lambda (tag)
+          (tag-proc/cleanup (lookup-getter tag) file))
+        *local-tag-list*))
      args))
 
   (cons tags tracks))
+
+(define (lookup-getter tag)
+  (cadr (assq tag *tag-map*)))
+
+(define (lookup-setter tag)
+  (cddr (assq tag *tag-map*)))
 
 (define (pass-to-editor datum)
   (let ((path (make-temporary-file "naturalize-~a.scm")))
@@ -136,13 +169,25 @@
 
 (define (apply-local-tags lt files)
   (for-each
-   (lambda (tag file)
-     (tag-proc/cleanup
-       (lambda (t)
-         (taglib:tag-set-track t (local-tag:tracknumber tag))
-         (taglib:tag-set-title t (local-tag:title tag)))
-       file))
-   lt files))
+    (lambda (local-tag file)
+      (for-each
+        (lambda (key val)
+          (tag-proc/cleanup
+           (lambda (t)
+             ((lookup-setter key) t val))
+           file))
+        *local-tag-list* local-tag))
+    lt files))
+
+; (define (apply-local-tags lt files)
+;   (for-each
+;    (lambda (tag file)
+;      (tag-proc/cleanup
+;        (lambda (t)
+;          (taglib:tag-set-track t (local-tag:tracknumber tag))
+;          (taglib:tag-set-title t (local-tag:title tag)))
+;        file))
+;    lt files))
      
 
 (define (apply-one-tag tag files)
@@ -155,8 +200,6 @@
      file))
    files))
    
-(define (lookup-setter tag)
-  (cddr (assq tag *tag-map*)))
 
 
 
