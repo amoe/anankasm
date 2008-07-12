@@ -4,7 +4,6 @@
 (require srfi/26)  ; cut & cute
 (require scheme/system)
 
-;(require (planet neil/levenshtein:1:1/levenshtein))
 
 (require (prefix-in taglib: "taglib.scm"))
 
@@ -37,6 +36,11 @@
   (if *va-mode*
       '(tracknumber artist title)
       '(tracknumber title)))
+
+(define *filename-template*
+  (if *va-mode*
+      "/home/amoe/music/various/%d-%A/%T-%a_-_%t"
+      "/home/amoe/music/%a/%d-%A/%T-%t"))
 
 ; ENTRY POINT
 (define (main . args)
@@ -87,14 +91,13 @@
         result))))
 
 (define (strip-tags args)
-  (apply system*
+  (apply system/silent*
          (cons *default-eyed3*
                (cons "--remove-all"
                      (cons "--no-color" args)))))
 
 (define (apply-tags tmpl files)
-  (say "applying template: ~a" tmpl)
-
+  (say "writing tags...")
   (for-each
    (lambda (t) (apply-one-tag t files))
    (template:global-tags tmpl))
@@ -104,21 +107,26 @@
 (define (replaygain files)
   ; igoldgain algorithm
   ; first, copy all files
+  (display "calculating replaygain values... ")
+  (flush-output)
+
   (let ((tmp (map
                (cute make-temporary-file "naturalize-~a.mp3" <>)
                files))
         (options (list "-s" "r" "-c" "-a")))
-    (apply system*
+    (apply system/silent*
            (cons *default-mp3gain*
                  (append options (map path->string tmp))))
+    (say "done.")
+
     (for-each
       (lambda (orig copy)
-        (say "applying RG tags to ~a from ~a" orig copy)
-        
         (apply-text-tags (gain-info-from-tags copy)
                          orig))
       
-      files (map path->string tmp))))
+      files (map path->string tmp))
+    
+    (for-each delete-file tmp)))
 
 (define (move-files files)
   #t)
@@ -126,22 +134,35 @@
 (define (gain-info-from-tags file)
   (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
     (let ((output (slurp-lines (first l))))
-      (list
-       (cons 'replaygain_track_gain (after-colon (second output)))
-       (cons 'replaygain_track_peak (after-colon (fourth output)))
-       (cons 'replaygain_album_gain (after-colon (seventh output)))
-       (cons 'replaygain_album_peak (after-colon (ninth output)))))))
+
+    (close-input-port (first l))
+    (close-output-port (second l))
+    (close-input-port (fourth l))
+
+    (list
+     (cons 'replaygain_track_gain (after-colon (second output)))
+     (cons 'replaygain_track_peak (after-colon (fourth output)))
+     (cons 'replaygain_album_gain (after-colon (seventh output)))
+     (cons 'replaygain_album_peak (after-colon (ninth output)))))))
 
 (define (apply-text-tags tags file)
   (for-each
    (lambda (tag)
      (let ((str (format "--set-user-text-frame=~a:~a"
                         (car tag) (cdr tag))))
-       (apply system* (list *default-eyed3* str file))))
+       (apply system/silent* (list *default-eyed3* str file))))
    tags))
 
 (define (after-colon str)
   (cadr (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
+
+(define (system/silent* . args)
+  (let ((l (apply process* args)))
+    ((fifth l) 'wait)
+    (close-input-port (first l))
+    (close-output-port (second l))
+    (close-input-port (fourth l))
+    ((fifth l) 'exit-code)))
 
 (define (slurp-lines port)
   (let ((l (read-line port)))
@@ -173,12 +194,10 @@
 
 (define (run-editor file)
   (say "invoking editor: ~a" file)
-  (system* (get-editor) (path->string file)))
+  (system/silent* (get-editor) (path->string file)))
 
 (define (get-editor)
   (or (getenv "EDITOR") "/usr/bin/nano"))
-
-
 
 (define (ask-menu hist)
   (print-histogram hist)
@@ -217,16 +236,16 @@
 
 (define (frequency>? x y) (> (cdr x) (cdr y)))
 
-
-; r5rs say
-(define (say msg)
-  (display msg)
-  (newline))
-
 ; super-say
 (define (say . args)
   (display (apply format args))
   (newline))
+
+(define (xformat str alist)
+  (regexp-replace* #rx"%(.)" str 
+                   (lambda (all one)
+                     (let ((r (assoc one alist)))
+                       (if r (cdr r) "")))))
 
 (define (tag-proc/cleanup proc file)
   (let ((f (taglib:file-new file)))
@@ -251,7 +270,6 @@
     lt files))
 
 (define (apply-one-tag tag files)
-  (say "applying tag: ~a" tag)
   (for-each
    (lambda (file)
     (tag-proc/cleanup

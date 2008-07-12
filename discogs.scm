@@ -2,6 +2,8 @@
 (require net/url)
 (require file/gunzip)
 
+;(require (planet neil/levenshtein:1:1/levenshtein))
+
 (define *debug-mode* #t)
 
 (define (debug msg)
