@@ -49,8 +49,8 @@
      (let ((tmpl (pass-to-editor (apply files->template args))))
        (strip-tags args)
        (apply-tags tmpl args)
-       (replaygain args)
-       (move-files args)))
+       (replaygain args)))
+       ;(move-files tmpl args)))
    args))
 
 (define (preserve-mtimes proc files)
@@ -104,6 +104,7 @@
 
   (apply-local-tags (template:local-tags tmpl) files))
 
+; Please make sure you have write permissions on files.
 (define (replaygain files)
   ; igoldgain algorithm
   ; first, copy all files
@@ -114,7 +115,7 @@
                (cute make-temporary-file "naturalize-~a.mp3" <>)
                files))
         (options (list "-s" "r" "-c" "-a")))
-    (apply system/silent*
+    (apply system*
            (cons *default-mp3gain*
                  (append options (map path->string tmp))))
     (say "done.")
@@ -128,8 +129,17 @@
     
     (for-each delete-file tmp)))
 
-(define (move-files files)
-  #t)
+(define (move-files tmpl files)
+  ; For each file,
+  ; we fill in the template appropriately from global and
+  ; local tags.  So concurrently iterate through the file list and
+  ; the local tags, and extract the global tags statically beforehand.
+  (let ((gt (template:global-tags tmpl)))
+    (for-each
+      (lambda (file lt)
+        (say "file: ~a" file)
+        (say "tag: ~a" lt))
+      files (template:local-tags tmpl))))
 
 (define (gain-info-from-tags file)
   (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
@@ -138,12 +148,25 @@
     (close-input-port (first l))
     (close-output-port (second l))
     (close-input-port (fourth l))
+    
+    (filter-map rg-tag output))))
 
-    (list
-     (cons 'replaygain_track_gain (after-colon (second output)))
-     (cons 'replaygain_track_peak (after-colon (fourth output)))
-     (cons 'replaygain_album_gain (after-colon (seventh output)))
-     (cons 'replaygain_album_peak (after-colon (ninth output)))))))
+; Return: #f if no match, or the appropriate pair if match
+; FILTER-MAP this function across the returned list to get the correct stuff
+
+(define (rg-tag line)
+  (define rg-lines
+    '((#rx"Recommended \"Track\" dB change:"      . replaygain_track_gain)
+      (#rx"Max PCM sample at current gain:"       . replaygain_track_peak)
+      (#rx"Recommended \"Album\" dB change:"      . replaygain_album_gain)
+      (#rx"Max Album PCM sample at current gain:" . replaygain_album_peak)))
+
+  (any
+    (lambda (x)
+      (if (regexp-match? (car x) line)
+          (cons (cdr x) (after-colon line))
+          #f))
+    rg-lines))
 
 (define (apply-text-tags tags file)
   (for-each
@@ -154,7 +177,10 @@
    tags))
 
 (define (after-colon str)
-  (cadr (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
+  (let ((x (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
+    (if x
+      (cadr x)
+      (error "internal fuckup: invalid string passed to after-colon"))))
 
 (define (system/silent* . args)
   (let ((l (apply process* args)))
@@ -194,7 +220,7 @@
 
 (define (run-editor file)
   (say "invoking editor: ~a" file)
-  (system/silent* (get-editor) (path->string file)))
+  (system* (get-editor) (path->string file)))
 
 (define (get-editor)
   (or (getenv "EDITOR") "/usr/bin/nano"))
