@@ -2,10 +2,17 @@
 (require scheme/pretty)
 (require srfi/1)   ; list library
 (require srfi/26)  ; cut & cute
+(require srfi/64)
 (require scheme/system)
 
+(require (prefix-in taglib:    "taglib.scm"))
+(require (prefix-in munge-tag: "munge-tag.scm"))
 
-(require (prefix-in taglib: "taglib.scm"))
+; *** BUGS: ****
+; - Mangles unicode tags, do not know why
+; - Tag stripping not working
+; - Number formatting not working in moving
+; - Tracknumbers not being written properly
 
 ; orange JUICE
 ; orange JUICE
@@ -44,14 +51,15 @@
 
 ; ENTRY POINT
 (define (main . args)
-  (preserve-mtimes
-   (lambda ()
-     (let ((tmpl (pass-to-editor (apply files->template args))))
-       (strip-tags args)
+  (let ((tmpl (pass-to-editor (apply files->template args))))
+
+    (preserve-mtimes
+     (lambda ()
        (apply-tags tmpl args)
-       (replaygain args)))
-       ;(move-files tmpl args)))
-   args))
+       (replaygain args))
+     args)
+
+    (move-files tmpl args)))
 
 (define (preserve-mtimes proc files)
   (let ((times (save-mtimes files)))
@@ -137,9 +145,119 @@
   (let ((gt (template:global-tags tmpl)))
     (for-each
       (lambda (file lt)
+        (s
+         ay "file: ~a" file)
+        (say "tag: ~a" lt)
+        (say "new: ~a"
+             (xformat *filename-template*
+                      (list
+                        (cons "a"
+                          (if *va-mode*
+                              (cdr (assq 'artist gt))
+                              (second
+                        (cons "A" (cdr (assq 'album  gt)))
+                        (cons "t" (second lt))
+                        (cons "T" (number->string (first lt)))
+                        (cons "d" (number->string (cdr (assq 'date gt))))
+                        (cons "g" (cdr (assq 'genre gt)))))))
+      files (template:local-tags tmpl)))))))
+
+; Need to create all preceding folders before being able to move here.
+(define (move-files tmpl files)
+  (for-each
+   (lambda (old new)
+     (make-parents new)
+     (rename-file-or-directory old new))
+   files (template->new-names tmpl files)))
+
+
+; WARNING: DARK DARK MAGIC
+(define (make-parents path)
+  (for-each make-directory/uncaring
+    (map (cute apply build-path <>)
+         (map reverse
+              (unfold-right
+                null?
+                identity
+                cdr
+                (cdr (reverse (explode-path path))))))))
+
+; warning: race conditAion
+(define (make-directory/uncaring path)
+  (when (not (directory-exists? path))
+    (make-directory path)))
+
+; Alternative way to do this:
+;  Define mapping from abbrev to full tag,
+;  For each abbrev, lookup the tag in the global and local tag lists,
+;  If in the global list, assq it;
+;  If in the local list, list-ref it based the position in local tag list.
+;  Some tags need special processing, like zero-padding on the tracknumber.
+;  So the mapping can look like:
+;  ((abbreviation . (full-tag-name . preprocessor)))
+;  Where the preprocessor is the identity function normally, and is the
+;  appropriate conversion function otherwise.
+;  Each tag is always put through the munger, regardless of the preprocessor
+
+(define (identity x) x)
+
+(define *abbreviated-tag-map*
+  (list
+    (cons "a" (cons 'artist      identity))
+    (cons "A" (cons 'album       identity))
+    (cons "t" (cons 'title       identity))
+    (cons "T" (cons 'tracknumber number->string))
+    (cons "d" (cons 'date        number->string))
+    (cons "g" (cons 'genre       identity))))
+
+; We can only build part of the list at the start so this is not valid
+(define (template->new-names tmpl files)
+  (let ((ga (build-global-abbrevs tmpl)))
+    (map
+      (lambda (lt file)
+        (say "lt: ~a" lt)
         (say "file: ~a" file)
-        (say "tag: ~a" lt))
-      files (template:local-tags tmpl))))
+        (let ((la (build-local-abbrevs lt)))
+          (append-extension
+           (xformat *filename-template*
+                    (append ga la))
+           file)))
+      (template:local-tags tmpl) files)))
+
+; Append the extension of old to new, if there was one
+(define (append-extension new old)
+  (let ((ext (filename-extension old)))
+    (if ext
+        (string-append new "." (bytes->string/locale ext))
+        old)))
+    
+(define (build-local-abbrevs lt)
+  (filter-map
+    (lambda (abbrev)
+      (let ((proc (cddr abbrev)))
+        (cond
+         ((list-index (cute eq? <> (cadr abbrev)) *local-tag-list*)
+           => (lambda (idx)
+                (cons (car abbrev)
+                      (munge-tag:munge-tag
+                        (proc (list-ref lt idx))))))
+         (else #f))))
+    *abbreviated-tag-map*))
+
+(define (build-global-abbrevs tmpl)
+  (let ((gt (template:global-tags tmpl)))
+    (map
+      (lambda (abbrev)
+        (let ((proc (cddr abbrev)))
+          (cons
+            (car abbrev)
+            (munge-tag:munge-tag
+              (proc (cdr (assq (cadr abbrev) gt)))))))
+      (filter
+        (lambda (abbrev)
+          (memq (cadr abbrev) *global-tag-list*))
+        *abbreviated-tag-map*))))
+        
 
 (define (gain-info-from-tags file)
   (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
@@ -303,5 +421,18 @@
        (lambda (t) (set-tag t (cdr tag))))
      file))
    files))
+
+(define (test)
+  (define tmpl
+    '(((artist . "Artist") (album . "Album") (genre . "Genre") (date . 2008))
+      . ((1 "Track 01") (2 "Track 02") (3 "Track 03"))))
+
+  (test-begin "naturalize")
+
+  (test-equal
+    '((artist . "Artist") (album . "Album") (genre . "Genre") (date . 2008))
+    (template:global-tags tmpl))
+  
+  (test-end "naturalize"))
 
 (apply main (vector->list (current-command-line-arguments)))
