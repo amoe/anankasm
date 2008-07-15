@@ -21,7 +21,7 @@
   ; _string*/utf-8, which we avoid for the moment.
   (default-_string-type _string/utf-8)
 
-  (define lib (ffi-lib "libtag_c.so.0"))
+  (define lib (ffi-lib "libtag_c"))
 
 
   ; types
@@ -56,6 +56,14 @@
 
   ; Now we can just use:
   ;(define-taglib set-strings-unicode (_fun _bool -> _void))
+  (define _id3v2-encoding
+    (_enum '(id3v2-latin1 id3v2-utf16 id3v2-utf16be id3v2-utf8)))
+  
+  (define id3v2-set-default-text-encoding
+    (get-ffi-obj "taglib_id3v2_set_default_text_encoding"
+               lib (_fun _id3v2-encoding -> _void)))
+
+
 
   ; strings
   (define set-strings-unicode
@@ -179,3 +187,6 @@
 
 ; TODO: write tests with SRFI-78 check.ss
 ; check explicit renaming macros
+
+;
+

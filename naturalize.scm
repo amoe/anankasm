@@ -10,6 +10,9 @@
 
 ; *** BUGS: ****
 ; - Mangles unicode tags, do not know why
+; The bug is TAGLIB - 1.5 added unicode selection.  Before this, values
+; get mangled, do not know why.
+; Please use TL 1.5 or greater.
 ; - Replaygain causes files to be silent.
 ;     It is apply-text-tags function that causes it.
 ;     Tracks created as such are silent in rhythmbox.
@@ -42,7 +45,7 @@
 (define *default-eyed3*    "/usr/bin/eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
 
-(define *va-mode* #f)
+(define *va-mode* #t)
 (define *debug* #t)
 
 (define *tag-map*
