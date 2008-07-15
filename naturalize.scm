@@ -10,9 +10,28 @@
 
 ; *** BUGS: ****
 ; - Mangles unicode tags, do not know why
-; - Tag stripping not working
-; - Number formatting not working in moving
-; - Tracknumbers not being written properly
+; - Replaygain causes files to be silent.
+;     It is apply-text-tags function that causes it.
+;     Tracks created as such are silent in rhythmbox.
+;     They decode with madplay to a WAV that will then play in
+;     any app, however peak level for madplay is always 0.
+;     xxd shows that all content is still present.
+;     So far, this happens on VBR and CBR 320kbps MP3s
+;     MP3 doesn't matter.  The second you add these tags, it breaks RB.
+;     Switching tracks & removing from the database and readding doesn't fix
+;     either.  It's required to restart RB and re-add the file after
+;     removing the tags.   - only sometimes.
+;     Adding just track tags doesn't break MP3s.
+;       -- Actually, yes it does.  Adding only album tags breaks too.
+;  CONCLUSION:
+;    This looks an awful lot like a bug in RB.
+;    Unfortunately it ain't easy to test, but Audacious eats the generated
+;    mp3s fine, and madplay decodes them fine too.
+;    I believe rockbox plays them too, since that solid paranoid crap worked.
+;  FREAKY THING:
+;   Boom MP3s still work!  Even tho they have tags!  And they STILL WORK
+;   FINE, every single one.  MADNESS.
+
 
 ; orange JUICE
 ; orange JUICE
@@ -24,6 +43,7 @@
 (define *default-mp3gain*  "/usr/bin/mp3gain")
 
 (define *va-mode* #f)
+(define *debug* #t)
 
 (define *tag-map*
   (list
@@ -50,21 +70,18 @@
       "/home/amoe/music/%a/%d-%A/%T-%t"))
 
 ; ENTRY POINT
+; note: Because of the way tag-proc/cleanup is imp'd, files->template
+; WRITES files, thus mutilating their mtime.  Should be fixed, but
+; this workaround is fine.
 (define (main . args)
-  (let ((tmpl (pass-to-editor (apply files->template args))))
+  (let ((times (save-mtimes args)))
+    (let ((tmpl (pass-to-editor (apply files->template args))))
+      (strip-tags args)
+      (apply-tags tmpl args)
+      (replaygain args)
 
-    (preserve-mtimes
-     (lambda ()
-       (apply-tags tmpl args)
-       (replaygain args))
-     args)
-
-    (move-files tmpl args)))
-
-(define (preserve-mtimes proc files)
-  (let ((times (save-mtimes files)))
-    (proc)
-    (load-mtimes files times)))
+      (load-mtimes args times)
+      (move-files tmpl args))))
 
 (define (files->template . args)
   (define tags
@@ -128,39 +145,14 @@
                  (append options (map path->string tmp))))
     (say "done.")
 
-    (for-each
-      (lambda (orig copy)
-        (apply-text-tags (gain-info-from-tags copy)
-                         orig))
-      
-      files (map path->string tmp))
+     (for-each
+       (lambda (orig copy)
+         (apply-text-tags (gain-info-from-tags copy)
+                          orig))
+     
+       files (map path->string tmp))
     
     (for-each delete-file tmp)))
-
-(define (move-files tmpl files)
-  ; For each file,
-  ; we fill in the template appropriately from global and
-  ; local tags.  So concurrently iterate through the file list and
-  ; the local tags, and extract the global tags statically beforehand.
-  (let ((gt (template:global-tags tmpl)))
-    (for-each
-      (lambda (file lt)
-        (s
-         ay "file: ~a" file)
-        (say "tag: ~a" lt)
-        (say "new: ~a"
-             (xformat *filename-template*
-                      (list
-                        (cons "a"
-                          (if *va-mode*
-                              (cdr (assq 'artist gt))
-                              (second
-                        (cons "A" (cdr (assq 'album  gt)))
-                        (cons "t" (second lt))
-                        (cons "T" (number->string (first lt)))
-                        (cons "d" (number->string (cdr (assq 'date gt))))
-                        (cons "g" (cdr (assq 'genre gt)))))))
-      files (template:local-tags tmpl)))))))
 
 ; Need to create all preceding folders before being able to move here.
 (define (move-files tmpl files)
@@ -206,17 +198,21 @@
     (cons "a" (cons 'artist      identity))
     (cons "A" (cons 'album       identity))
     (cons "t" (cons 'title       identity))
-    (cons "T" (cons 'tracknumber number->string))
+    (cons "T" (cons 'tracknumber (compose (cute zero-pad <> 2) number->string)))
     (cons "d" (cons 'date        number->string))
     (cons "g" (cons 'genre       identity))))
+
+(define (zero-pad str len)
+  (let ((diff (- len (string-length str))))
+    (if (positive? diff)
+        (string-append (make-string diff #\0) str)
+        str)))
 
 ; We can only build part of the list at the start so this is not valid
 (define (template->new-names tmpl files)
   (let ((ga (build-global-abbrevs tmpl)))
     (map
       (lambda (lt file)
-        (say "lt: ~a" lt)
-        (say "file: ~a" file)
         (let ((la (build-local-abbrevs lt)))
           (append-extension
            (xformat *filename-template*
@@ -291,7 +287,7 @@
    (lambda (tag)
      (let ((str (format "--set-user-text-frame=~a:~a"
                         (car tag) (cdr tag))))
-       (apply system/silent* (list *default-eyed3* str file))))
+       (apply system* (list *default-eyed3* str file))))
    tags))
 
 (define (after-colon str)
@@ -384,6 +380,9 @@
 (define (say . args)
   (display (apply format args))
   (newline))
+
+(define (debug msg)
+  (when *debug* (say msg)))
 
 (define (xformat str alist)
   (regexp-replace* #rx"%(.)" str 
