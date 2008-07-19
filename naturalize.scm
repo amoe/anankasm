@@ -1,12 +1,14 @@
 (require scheme/string)
 (require scheme/pretty)
+(require scheme/system)
+
 (require srfi/1)   ; list library
 (require srfi/26)  ; cut & cute
 (require srfi/64)
-(require scheme/system)
 
 (require (prefix-in taglib:    "taglib.scm"))
 (require (prefix-in munge-tag: "munge-tag.scm"))
+(require "options.scm")
 
 ; *** BUGS: ****
 ; - Mangles unicode tags, do not know why
@@ -41,12 +43,15 @@
 ; orange JUICE
 ; for life!
 
+
+; Release BLOCKERS:
+; -V needs to work flawlessly
+; Errors need to be improved: no input provided, non-mp3 provided, etc.
+
+
 (define *default-editor*   "/usr/bin/nano")
 (define *default-eyed3*    "/usr/bin/eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
-
-(define *va-mode* #t)
-(define *debug* #t)
 
 (define *tag-map*
   (list
@@ -57,34 +62,20 @@
    (cons 'date (cons taglib:tag-year taglib:tag-set-year))
    (cons 'genre (cons taglib:tag-genre taglib:tag-set-genre))))
 
-(define *global-tag-list*
-  (if *va-mode*
-      '(album date genre)
-      '(artist album date genre)))
-
-(define *local-tag-list*
-  (if *va-mode*
-      '(tracknumber artist title)
-      '(tracknumber title)))
-
-(define *filename-template*
-  (if *va-mode*
-      "/home/amoe/music/various/%d-%A/%T-%a_-_%t"
-      "/home/amoe/music/%a/%d-%A/%T-%t"))
-
 ; ENTRY POINT
 ; note: Because of the way tag-proc/cleanup is imp'd, files->template
 ; WRITES files, thus mutilating their mtime.  Should be fixed, but
 ; this workaround is fine.
 (define (main . args)
-  (let ((times (save-mtimes args)))
-    (let ((tmpl (pass-to-editor (apply files->template args))))
-      (strip-tags args)
-      (apply-tags tmpl args)
-      (replaygain args)
-
-      (load-mtimes args times)
-      (move-files tmpl args))))
+  (let ((args (configure args)))
+    (let ((times (save-mtimes args)))
+      (let ((tmpl (pass-to-editor (apply files->template args))))
+        (strip-tags args)
+        (apply-tags tmpl args)
+        (replaygain args)
+        
+        (load-mtimes args times)
+        (move-files tmpl args)))))
 
 (define (files->template . args)
   (define tags
@@ -93,7 +84,7 @@
        (cons tag
              (apply select-from-tags
                     (cons (lookup-getter tag) args))))
-     *global-tag-list*))
+     (global-tag-list)))
      
   (define tracks
     (map
@@ -101,7 +92,7 @@
        (map
         (lambda (tag)
           (tag-proc/cleanup (lookup-getter tag) file))
-        *local-tag-list*))
+        (local-tag-list)))
      args))
 
   (cons tags tracks))
@@ -132,6 +123,8 @@
 
   (apply-local-tags (template:local-tags tmpl) files))
 
+; See link below for the source of this algorithm.
+; http://www.hydrogenaudio.org/forums/index.php?showtopic=42005
 ; Please make sure you have write permissions on files.
 (define (replaygain files)
   ; igoldgain algorithm
@@ -218,7 +211,7 @@
       (lambda (lt file)
         (let ((la (build-local-abbrevs lt)))
           (append-extension
-           (xformat *filename-template*
+           (xformat (filename-template)
                     (append ga la))
            file)))
       (template:local-tags tmpl) files)))
@@ -235,7 +228,7 @@
     (lambda (abbrev)
       (let ((proc (cddr abbrev)))
         (cond
-         ((list-index (cute eq? <> (cadr abbrev)) *local-tag-list*)
+         ((list-index (cute eq? <> (cadr abbrev)) (local-tag-list))
            => (lambda (idx)
                 (cons (car abbrev)
                       (munge-tag:munge-tag
@@ -254,7 +247,7 @@
               (proc (cdr (assq (cadr abbrev) gt)))))))
       (filter
         (lambda (abbrev)
-          (memq (cadr abbrev) *global-tag-list*))
+          (memq (cadr abbrev) (global-tag-list)))
         *abbreviated-tag-map*))))
         
 
@@ -272,18 +265,12 @@
 ; FILTER-MAP this function across the returned list to get the correct stuff
 
 (define (rg-tag line)
-  (define rg-lines
-    '((#rx"Recommended \"Track\" dB change:"      . replaygain_track_gain)
-      (#rx"Max PCM sample at current gain:"       . replaygain_track_peak)
-      (#rx"Recommended \"Album\" dB change:"      . replaygain_album_gain)
-      (#rx"Max Album PCM sample at current gain:" . replaygain_album_peak)))
-
   (any
     (lambda (x)
       (if (regexp-match? (car x) line)
           (cons (cdr x) (after-colon line))
           #f))
-    rg-lines))
+    (rg-lines)))
 
 (define (apply-text-tags tags file)
   (for-each
@@ -412,7 +399,7 @@
            (lambda (t)
              ((lookup-setter key) t val))
            file))
-        *local-tag-list* local-tag))
+        (local-tag-list) local-tag))
     lt files))
 
 (define (apply-one-tag tag files)
