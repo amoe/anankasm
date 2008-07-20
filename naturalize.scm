@@ -1,6 +1,6 @@
+(require scheme/system)
 (require scheme/string)
 (require scheme/pretty)
-(require scheme/system)
 
 (require srfi/1)   ; list library
 (require srfi/26)  ; cut & cute
