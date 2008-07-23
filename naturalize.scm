@@ -1,6 +1,7 @@
-(require scheme/system)
+#lang scheme
+
 (require scheme/string)
-(require scheme/pretty)
+(require scheme/system)
 
 (require srfi/1)   ; list library
 (require srfi/26)  ; cut & cute
@@ -8,7 +9,11 @@
 
 (require (prefix-in taglib:    "taglib.scm"))
 (require (prefix-in munge-tag: "munge-tag.scm"))
+(require "histogram.scm")
+(require "interface.scm")
 (require "options.scm")
+
+(provide main)
 
 ; *** BUGS: ****
 ; - Mangles unicode tags, do not know why
@@ -45,11 +50,9 @@
 
 
 ; Release BLOCKERS:
-; -V needs to work flawlessly
 ; Errors need to be improved: no input provided, non-mp3 provided, etc.
 
 
-(define *default-editor*   "/usr/bin/nano")
 (define *default-eyed3*    "/usr/bin/eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
 
@@ -97,20 +100,10 @@
 
   (cons tags tracks))
 
-(define (pass-to-editor datum)
-  (let ((path (make-temporary-file "naturalize-~a.scm")))
-    (let ((out (open-output-file path #:exists 'truncate)))
-      (pretty-print datum out)
-      (close-output-port out)
 
-      (run-editor path)
-
-      (let ((result (read (open-input-file path))))
-        (delete-file path)
-        result))))
 
 (define (strip-tags args)
-  (apply system/silent*
+  (apply run-command
          (cons *default-eyed3*
                (cons "--remove-all"
                      (cons "--no-color" args)))))
@@ -136,7 +129,7 @@
                (cute make-temporary-file "naturalize-~a.mp3" <>)
                files))
         (options (list "-s" "r" "-c" "-a")))
-    (apply system*
+    (apply run-command
            (cons *default-mp3gain*
                  (append options (map path->string tmp))))
     (say "done.")
@@ -170,7 +163,7 @@
                 cdr
                 (cdr (reverse (explode-path path))))))))
 
-; warning: race conditAion
+; warning: race condition
 (define (make-directory/uncaring path)
   (when (not (directory-exists? path))
     (make-directory path)))
@@ -277,7 +270,7 @@
    (lambda (tag)
      (let ((str (format "--set-user-text-frame=~a:~a"
                         (car tag) (cdr tag))))
-       (apply system* (list *default-eyed3* str file))))
+       (apply run-command (list *default-eyed3* str file))))
    tags))
 
 (define (after-colon str)
@@ -286,28 +279,20 @@
       (cadr x)
       (error "internal fuckup: invalid string passed to after-colon"))))
 
-(define (system/silent* . args)
-  (let ((l (apply process* args)))
-    ((fifth l) 'wait)
-    (close-input-port (first l))
-    (close-output-port (second l))
-    (close-input-port (fourth l))
-    ((fifth l) 'exit-code)))
-
 (define (slurp-lines port)
   (let ((l (read-line port)))
     (if (eof-object? l)
         '()
         (cons l (slurp-lines port)))))
 
-
+; At the moment we're not displaying the histogram frequencies to the user,
+; we're just sorting by them, so option 1 always has the highest frequency
 (define (select-from-tags get-tag . args)
   (let ((tags (map (lambda (f) (tag-proc/cleanup get-tag f)) args)))
     (let ((hist (sort (histogram tags) frequency>?)))
       (if (just-one? hist)
           (caar hist)
-          (ask-menu hist)))))
-
+          (choose (map car hist) 1)))))
 
 (define (lookup-getter tag)
   (cadr (assq tag *tag-map*)))
@@ -321,65 +306,7 @@
 
 (define (load-mtimes files times)
   (for-each file-or-directory-modify-seconds files times))
-
-(define (run-editor file)
-  (say "invoking editor: ~a" file)
-  (system* (get-editor) (path->string file)))
-
-(define (get-editor)
-  (or (getenv "EDITOR") "/usr/bin/nano"))
-
-(define (ask-menu hist)
-  (print-histogram hist)
-  (let ((answer (ask "Which tag is correct?" 1)))
-    (car (list-ref hist (- answer 1)))))
-
 (define (just-one? lst) (= (length lst) 1))
-
-(define (ask question default)
-  (display
-    (format "~a [~a] " question default))
-  (flush-output)
-  (read))
-
-(define (print-histogram hist)
-  (for-each
-    (lambda (n x f)
-      (display
-        (format "~a. ~a (~a)~n"
-                n x f)))
-    (iota (+ (length hist) 1) 1)
-    (map car hist) (map cdr hist)))
-
-; This is roughly a histogram, anyway - call it with a sorted list.
-; It returns an alist of (item . frequency)
-(define (histogram lst)
-  (define (iter n item lst)
-    (cond
-     ((null? lst)  (cons (cons item n) '()))
-     ((equal? (car lst) item)
-      (iter (+ n 1) item (cdr lst)))
-     (else (cons (cons item n)
-                 (iter 1 (car lst) (cdr lst))))))
-
-  (iter 0 (car lst) lst))
-
-(define (frequency>? x y) (> (cdr x) (cdr y)))
-
-; super-say
-(define (say . args)
-  (display (apply format args))
-  (newline))
-
-(define (debug msg)
-  (when *debug* (say msg)))
-
-(define (xformat str alist)
-  (regexp-replace* #rx"%(.)" str 
-                   (lambda (all one)
-                     (let ((r (assoc one alist)))
-                       (if r (cdr r) "")))))
-
 (define (tag-proc/cleanup proc file)
   (let ((f (taglib:file-new file)))
     (let ((datum (proc (taglib:file-tag f))))
@@ -410,18 +337,3 @@
        (lambda (t) (set-tag t (cdr tag))))
      file))
    files))
-
-(define (test)
-  (define tmpl
-    '(((artist . "Artist") (album . "Album") (genre . "Genre") (date . 2008))
-      . ((1 "Track 01") (2 "Track 02") (3 "Track 03"))))
-
-  (test-begin "naturalize")
-
-  (test-equal
-    '((artist . "Artist") (album . "Album") (genre . "Genre") (date . 2008))
-    (template:global-tags tmpl))
-  
-  (test-end "naturalize"))
-
-(apply main (vector->list (current-command-line-arguments)))
