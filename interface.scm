@@ -96,4 +96,14 @@
         (let loop ()
           (let ((n (read-bytes-avail!* buf)))
             (unless (or (eof-object? n) (zero? (read-bytes-avail!* buf)))
-              (loop))))))))
+              (loop)))))))
+
+
+; input = list of lists:
+; first = short-option, second = long-option, third = description
+; since short opts are always one char, just calculate the longest.
+; then spaces after opts is (length-of-longest - length-of-this-one) + 4
+; warn if any options spill over 80 chars
+(define (format-usage opts)
+  ; We can't use max, since we also need to kow the indx of what we seek
+  (apply max (map (compose string-length second) opts))))

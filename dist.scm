@@ -1,7 +1,9 @@
 #! /usr/bin/env mzscheme
 
+#lang scheme
+
 ; This file gets installed in 'bin' on FHS-compliant Unix
 
-(require "../lib/naturalize.scm")
+(require "../lib/naturalize/naturalize.scm")
 
 (apply main (vector->list (current-command-line-arguments)))

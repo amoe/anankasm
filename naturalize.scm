@@ -15,44 +15,6 @@
 
 (provide main)
 
-; *** BUGS: ****
-; - Mangles unicode tags, do not know why
-; The bug is TAGLIB - 1.5 added unicode selection.  Before this, values
-; get mangled, do not know why.
-; Please use TL 1.5 or greater.
-; - Replaygain causes files to be silent.
-;     It is apply-text-tags function that causes it.
-;     Tracks created as such are silent in rhythmbox.
-;     They decode with madplay to a WAV that will then play in
-;     any app, however peak level for madplay is always 0.
-;     xxd shows that all content is still present.
-;     So far, this happens on VBR and CBR 320kbps MP3s
-;     MP3 doesn't matter.  The second you add these tags, it breaks RB.
-;     Switching tracks & removing from the database and readding doesn't fix
-;     either.  It's required to restart RB and re-add the file after
-;     removing the tags.   - only sometimes.
-;     Adding just track tags doesn't break MP3s.
-;       -- Actually, yes it does.  Adding only album tags breaks too.
-;  CONCLUSION:
-;    This looks an awful lot like a bug in RB.
-;    Unfortunately it ain't easy to test, but Audacious eats the generated
-;    mp3s fine, and madplay decodes them fine too.
-;    I believe rockbox plays them too, since that solid paranoid crap worked.
-;  FREAKY THING:
-;   Boom MP3s still work!  Even tho they have tags!  And they STILL WORK
-;   FINE, every single one.  MADNESS.
-
-
-; orange JUICE
-; orange JUICE
-; orange JUICE
-; for life!
-
-
-; Release BLOCKERS:
-; Errors need to be improved: no input provided, non-mp3 provided, etc.
-
-
 (define *default-eyed3*    "/usr/bin/eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
 
@@ -167,18 +129,6 @@
 (define (make-directory/uncaring path)
   (when (not (directory-exists? path))
     (make-directory path)))
-
-; Alternative way to do this:
-;  Define mapping from abbrev to full tag,
-;  For each abbrev, lookup the tag in the global and local tag lists,
-;  If in the global list, assq it;
-;  If in the local list, list-ref it based the position in local tag list.
-;  Some tags need special processing, like zero-padding on the tracknumber.
-;  So the mapping can look like:
-;  ((abbreviation . (full-tag-name . preprocessor)))
-;  Where the preprocessor is the identity function normally, and is the
-;  appropriate conversion function otherwise.
-;  Each tag is always put through the munger, regardless of the preprocessor
 
 (define (identity x) x)
 

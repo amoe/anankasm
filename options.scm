@@ -28,7 +28,8 @@
      #:once-each
      (("-V" "--va-mode")             "Various Artists mode"
                                       (option! 'va-mode #t))
-     (("-v" "--verbose")             "show output from subprocesses" #t)
+     (("-v" "--verbose")             "show output from subprocesses"
+                                      (option! 'verbose #t))
      (("-M" "--mastering-disparity") "do not scan album gain"
                                       (option! 'mastering-disparity #t))
      (("-P" "--mangle-mtimes")       "don't preserve file mtimes" #t)

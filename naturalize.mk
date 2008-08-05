@@ -1,13 +1,22 @@
 prefix = /usr/local
 libdir = $(prefix)/lib/naturalize
 bindir = $(prefix)/bin
-modules = naturalize.scm interface.scm options.scm
+modules = taglib.scm \
+          munge-tag.scm \
+          naturalize.scm \
+          interface.scm \
+          options.scm \
+          histogram.scm
 
 install:
-	mkdir $(libdir)
+	mkdir -p $(libdir)
 	cp $(modules) $(libdir)
 
 	cp dist.scm $(bindir)/naturalize
 	chown root $(bindir)/naturalize
 	chgrp root $(bindir)/naturalize
 	chmod +x $(bindir)/naturalize
+
+uninstall:
+	rm -r $(libdir)
+	rm $(bindir)/naturalize
