@@ -8,12 +8,21 @@
 (require "interface.scm")
 
 ;
+(define (gigabytes x)
+  (* x (expt 2 30)))
+
+(define *limit* (gigabytes 2))
 
 (define (main . args)
   (let ((old (first args))
         (new (second args)))
     (say "building forest from ~a to ~a" old new)
-    (say "warning: existing forest in ~a will be nuked" old)))
+    (say "warning: existing forest in ~a will be nuked" old)
+    (accumulate-to-limit
+      (sort-by-mtime (find-leaves old))
+      *limit*)))
+
+    
 
 ; build alist: leaf -> mtime, sort on mtime, cdr down the list accumulating a
 ; new one, stop when predicate is true.  possibly the span and break procs?
@@ -41,8 +50,6 @@
          (lambda (x y)
            (> (cdr x) (cdr y))))))
 
-(define (gigabytes x)
-  (* x (expt 2 30)))
 
 (define (accumulate-to-limit paths limit)
   (let loop ((total 0) (paths paths))
@@ -67,4 +74,23 @@
 (define (alist-map proc lst)
   (map (lambda (x) (cons x (proc x))) lst))
 
-;(apply main (vector->list (current-command-line-arguments)))
+
+(define (identity x) x)
+
+; WARNING: DARK DARK MAGIC
+(define (make-parents path)
+  (for-each make-directory/uncaring
+    (map (cute apply build-path <>)
+         (map reverse
+              (unfold-right
+                null?
+                identity
+                cdr
+                (cdr (reverse (explode-path path))))))))
+
+; warning: race condition
+(define (make-directory/uncaring path)
+  (when (not (directory-exists? path))
+    (make-directory path)))
+
+(apply main (vector->list (current-command-line-arguments)))
