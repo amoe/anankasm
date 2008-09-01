@@ -40,12 +40,19 @@
       args))
 
   (define (system/silent* . args)
+    (debug "using new system/silent*")
+
     (let ((l (apply process* args)))
-      ((fifth l) 'wait)
-      (close-input-port (first l))
       (close-output-port (second l))
-      (close-input-port (fourth l))
-      ((fifth l) 'exit-code)))
+      (close-input-port (first l))
+
+      ((fifth l) 'wait)
+
+      (close-input-port (fourth l))))
+
+      
+     
+      
   
 ; super-say
   (define (say . args)

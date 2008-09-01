@@ -65,6 +65,7 @@
 
 
 (define (strip-tags args)
+  (debug "stripping tags")
   (apply run-command
          (cons *default-eyed3*
                (cons "--remove-all"
@@ -96,6 +97,8 @@
                  (append options (map path->string tmp))))
     (say "done.")
 
+    (debug "applying tags")
+
      (for-each
        (lambda (orig copy)
          (apply-text-tags (gain-info-from-tags copy)
@@ -103,10 +106,12 @@
      
        files (map path->string tmp))
     
+     (debug "deleting tempfiles")
     (for-each delete-file tmp)))
 
 ; Need to create all preceding folders before being able to move here.
 (define (move-files tmpl files)
+  (debug "moving files to correct locations")
   (for-each
    (lambda (old new)
      (make-parents new)
@@ -116,6 +121,7 @@
 
 ; WARNING: DARK DARK MAGIC
 (define (make-parents path)
+  (debug "making parents")
   (for-each make-directory/uncaring
     (map (cute apply build-path <>)
          (map reverse

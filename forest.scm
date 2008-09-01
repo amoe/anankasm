@@ -18,12 +18,29 @@
         (new (second args)))
     (say "building forest from ~a to ~a" old new)
     (say "warning: existing forest in ~a will be nuked" old)
-    (accumulate-to-limit
-      (sort-by-mtime (find-leaves old))
-      *limit*)))
+    (map 
+      (lambda (dir)
+        (simplify-path
+          (build-path new (path-remove-prefix old dir))))
+         (accumulate-to-limit
+          (sort-by-mtime (find-leaves old))
+          *limit*))))
 
-    
+; Remove leading PREFIX from PATH
+; PREFIX and PATH are both paths
+(define (path-remove-prefix prefix path)
+  (apply (cut build-path 'same <...>)
+         (let loop ((p1 (explode-path prefix))
+             (p2 (explode-path path)))
+           (cond
+             ((null? p1)  p2)
+             ((null? p2)  path)   ; this is a warn condition
+             ((equal? (car p1) (car p2))
+               (loop (cdr p1) (cdr p2)))
+             (else
+               (cons (car p2) (loop (cdr p1) (cdr p2))))))))
 
+               
 ; build alist: leaf -> mtime, sort on mtime, cdr down the list accumulating a
 ; new one, stop when predicate is true.  possibly the span and break procs?
 
@@ -77,6 +94,7 @@
 
 (define (identity x) x)
 
+
 ; WARNING: DARK DARK MAGIC
 (define (make-parents path)
   (for-each make-directory/uncaring
@@ -93,4 +111,4 @@
   (when (not (directory-exists? path))
     (make-directory path)))
 
-(apply main (vector->list (current-command-line-arguments)))
+;(apply main (vector->list (current-command-line-arguments)))
