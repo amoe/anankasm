@@ -7,24 +7,35 @@
 
 (require "interface.scm")
 
-;
+; BUGS:
+;   make-parents creates dirs that do not have the mtime of their duplicates
+;   no relative pathnames, must be absolute
+
+; gened with df -B1
+(define *sansa-size* 8005644288)
+
 (define (gigabytes x)
   (* x (expt 2 30)))
 
-(define *limit* (gigabytes 2))
+(define *limit* *sansa-size*)
 
 (define (main . args)
   (let ((old (first args))
         (new (second args)))
     (say "building forest from ~a to ~a" old new)
-    (say "warning: existing forest in ~a will be nuked" old)
-    (map 
+    (say "warning: any existing forest in ~a will be nuked" new)
+    (delete-directory/files new)
+    (for-each
       (lambda (dir)
-        (simplify-path
-          (build-path new (path-remove-prefix old dir))))
-         (accumulate-to-limit
-          (sort-by-mtime (find-leaves old))
-          *limit*))))
+        (let ((l (convert-path old new dir)))
+          (make-parents l)
+          (make-file-or-directory-link dir l)))
+      (accumulate-to-limit
+       (sort-by-mtime (find-leaves old))
+       *limit*))))
+
+(define (convert-path old new path)
+  (simplify-path (build-path new (path-remove-prefix old path))))
 
 ; Remove leading PREFIX from PATH
 ; PREFIX and PATH are both paths
@@ -39,7 +50,6 @@
                (loop (cdr p1) (cdr p2)))
              (else
                (cons (car p2) (loop (cdr p1) (cdr p2))))))))
-
                
 ; build alist: leaf -> mtime, sort on mtime, cdr down the list accumulating a
 ; new one, stop when predicate is true.  possibly the span and break procs?
@@ -111,4 +121,4 @@
   (when (not (directory-exists? path))
     (make-directory path)))
 
-;(apply main (vector->list (current-command-line-arguments)))
+(apply main (vector->list (current-command-line-arguments)))
