@@ -12,6 +12,8 @@
     choose
     say
     debug
+
+
     xformat)
 
   (define *default-editor* "/usr/bin/nano")
@@ -39,20 +41,25 @@
       (if (option 'verbose) system* system/silent*)
       args))
 
-  (define (system/silent* . args)
-    (debug "using new system/silent*")
+; NB:
+; mp3gain(1) has a freakin' weird behaviour where unless you read the data from
+; stderr, a write(2) call will eventually block and freeze the process at S+
+; status on ps(1).  Hence the CONSUME call here; if you remove this, mp3gain
+; processes will mysteriously hang on large (> 4 files) input sets.
+(define (system/silent* . args)
+  (let ((l (apply process* args)))
+    (consume (fourth l))
 
-    (let ((l (apply process* args)))
-      (close-output-port (second l))
-      (close-input-port (first l))
-
-      ((fifth l) 'wait)
-
-      (close-input-port (fourth l))))
-
+    ((fifth l) 'wait)
+    
+    (close-input-port (first l))
+    (close-output-port (second l))
+    (close-input-port (fourth l))))
       
-     
-      
+(define (consume port)
+  (let ((b (read-byte port)))
+    (when (not (eof-object? b))
+      (consume port))))
   
 ; super-say
   (define (say . args)
