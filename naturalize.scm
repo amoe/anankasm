@@ -28,19 +28,19 @@
    (cons 'genre (cons taglib:tag-genre taglib:tag-set-genre))))
 
 ; ENTRY POINT
-; note: Because of the way tag-proc/cleanup is imp'd, files->template
-; WRITES files, thus mutilating their mtime.  Should be fixed, but
-; this workaround is fine.
 (define (main . args)
   (let ((args (configure args)))
     (let ((times (save-mtimes args)))
-      (let ((tmpl (pass-to-editor (apply files->template args))))
-        (strip-tags args)
-        (apply-tags tmpl args)
-        (replaygain args)
+      (define (cleanup v)  (load-mtimes args times))
+
+      (with-handlers ((exn:break? cleanup))
+        (let ((tmpl (pass-to-editor (apply files->template args))))
+          (strip-tags args)
+          (apply-tags tmpl args)
+          (replaygain args)
         
-        (load-mtimes args times)
-        (move-files tmpl args)))))
+          (load-mtimes args times)
+          (move-files tmpl args))))))
 
 (define (files->template . args)
   (define tags
