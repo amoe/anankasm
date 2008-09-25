@@ -1,0 +1,36 @@
+Name for MP3 system
+abcde + patch + vc-wrapper + munge_tag
+naturalize-mp3
+rhythmbox patch
+scan-tree-adjusting-timestamps
+fix-RBDB
+
+vorbisgain original source, since Debian maintainers removed an essential option
+naturalize-mp3 needs to run replaygain-igold
+tag editor can pass over to emacs
+fetch tags w/discogs API
+
+cddb preprocessor to fix fuckups in DB data
+
+steps in naturalization:
+
+1.  cddb/discogs - scheme/discogs API
+2.  tag - eyeD3?
+3.  move - munge_tag
+4.  replaygain - igoldgain
+
+naturalize-album
+
+Artist is 'The Hold Steady'.  Wanna edit?  [y/n]
+Searching Discogs for 'The Hold Steady'...  found.
+Album is 'Boys and Girls in AmericaVINYL'.  Wanna edit? [y/n]
+
+munge_cddb
+
+"Do you have an expansive collection of 90's era experimental
+polka rivaling only museums? How do you keep it tidy? Chances
+are, it involves a considerable amount of hand-editing, a
+smidgen of bash, or a smattering of expletives to complete --
+and who has time for all of it anyway?" - Cowbell project.
+
+Answer = me.
