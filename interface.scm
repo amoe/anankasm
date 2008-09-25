@@ -1,4 +1,5 @@
-(module interface scheme
+#lang scheme
+
   (require scheme/system)
   (require scheme/pretty)
 
@@ -120,4 +121,4 @@
 ; warn if any options spill over 80 chars
 (define (format-usage opts)
   ; We can't use max, since we also need to kow the indx of what we seek
-  (apply max (map (compose string-length second) opts))))
+  (apply max (map (compose string-length second) opts)))
