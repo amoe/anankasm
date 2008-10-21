@@ -14,7 +14,6 @@
     say
     debug
 
-
     xformat)
 
   (define *default-editor* "/usr/bin/nano")
@@ -31,8 +30,13 @@
           (delete-file path)
           result))))
 
+  ; Run editor, which can be an arbitrary shell command
+  ; XXX: does not handle special characters (spaces etc)
   (define (run-editor file)
-    (system* (get-editor) (path->string file)))
+    (system
+      (string-append (get-editor)
+                     (string #\space)
+                     (path->string file))))
 
   (define (get-editor)
     (or (getenv "EDITOR") *default-editor*))

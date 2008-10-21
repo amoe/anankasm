@@ -19,7 +19,7 @@
     '((va-mode            . #f)
      (mastering-disparity . #f)
      (preserve-mtimes     . #t)
-     (debug               . #f)
+     (debug               . #t)
      (verbose             . #f)))
 
   (define (configure args)
