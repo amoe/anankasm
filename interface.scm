@@ -1,50 +1,50 @@
 #lang scheme
 
-  (require scheme/system)
-  (require scheme/pretty)
+(require scheme/system)
+(require scheme/pretty)
 
-  (require srfi/1)   ; why?
+(require srfi/1)   ; why?
 
-  (require "options.scm")
+(require "options.scm")
 
-  (provide
-    run-command
-    pass-to-editor
-    choose
-    say
-    debug
+(provide
+ run-command
+ pass-to-editor
+ choose
+ say
+ debug
+ 
+ xformat)
 
-    xformat)
+(define *default-editor* "/usr/bin/nano")
 
-  (define *default-editor* "/usr/bin/nano")
+(define (pass-to-editor datum)
+  (let ((path (make-temporary-file "naturalize-~a.scm")))
+    (let ((out (open-output-file path #:exists 'truncate)))
+      (pretty-print datum out)
+      (close-output-port out)
+      
+      (run-editor path)
+      
+      (let ((result (read (open-input-file path))))
+        (delete-file path)
+        result))))
 
-  (define (pass-to-editor datum)
-    (let ((path (make-temporary-file "naturalize-~a.scm")))
-      (let ((out (open-output-file path #:exists 'truncate)))
-        (pretty-print datum out)
-        (close-output-port out)
-        
-        (run-editor path)
-        
-        (let ((result (read (open-input-file path))))
-          (delete-file path)
-          result))))
+; Run editor, which can be an arbitrary shell command
+; 'shell-quote' is used to escape arguments
+(define (run-editor file)
+  (system
+   (string-append (get-editor)
+                  (string #\space)
+                  (shell-quote (path->string file)))))
 
-  ; Run editor, which can be an arbitrary shell command
-  ; XXX: does not handle special characters (spaces etc)
-  (define (run-editor file)
-    (system
-      (string-append (get-editor)
-                     (string #\space)
-                     (path->string file))))
+(define (get-editor)
+  (or (getenv "EDITOR") *default-editor*))
 
-  (define (get-editor)
-    (or (getenv "EDITOR") *default-editor*))
-
-  (define (run-command . args)
-    (apply
-      (if (option 'verbose) system* system/silent*)
-      args))
+(define (run-command . args)
+  (apply
+   (if (option 'verbose) system* system/silent*)
+   args))
 
 ; NB:
 ; mp3gain(1) has a freakin' weird behaviour where unless you read the data from
@@ -117,6 +117,19 @@
             (unless (or (eof-object? n) (zero? (read-bytes-avail!* buf)))
               (loop)))))))
 
+; Shell metacharacters, from POSIX
+(define metacharacters
+  "|&;<>()$`\"' \t\n*?[#~=%")
+
+(define meta-re
+  (regexp
+    (string-join
+     (map (compose regexp-quote string) (string->list metacharacters))
+     "|")))
+
+(define (shell-quote s)
+  (regexp-replace*
+    meta-re s (lambda args (string-append "\\" (first args)))))
 
 ; input = list of lists:
 ; first = short-option, second = long-option, third = description
