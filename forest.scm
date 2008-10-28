@@ -77,7 +77,6 @@
          (lambda (x y)
            (> (cdr x) (cdr y))))))
 
-
 (define (accumulate-to-limit paths limit)
   (let loop ((total 0) (paths paths))
     (if (null? paths)
@@ -101,9 +100,7 @@
 (define (alist-map proc lst)
   (map (lambda (x) (cons x (proc x))) lst))
 
-
 (define (identity x) x)
-
 
 ; WARNING: DARK DARK MAGIC
 (define (make-parents path)
