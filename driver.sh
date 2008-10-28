@@ -1,5 +1,7 @@
 #! /bin/sh
 
+# driver script for anankasm, invokes commands in prefix/lib/anankasm
+
 prgname=anankasm
 
 main() {
