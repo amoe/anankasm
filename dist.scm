@@ -1,4 +1,4 @@
-#! /usr/bin/env mzscheme
+#! /usr/local/bin/mzscheme
 
 #lang scheme
 

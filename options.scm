@@ -34,8 +34,8 @@
      (("-M" "--mastering-disparity") "do not scan album gain"
                                       (option! 'mastering-disparity #t))
      (("-P" "--mangle-mtimes")       "don't preserve file mtimes" #t)
-     #:args rest
-     rest))
+     #:args (path1 . paths)
+     (cons path1 paths)))
 
   (define (rg-lines)
     (if (option 'mastering-disparity)

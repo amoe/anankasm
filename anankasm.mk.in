@@ -1,1 +1,5 @@
 @MZSCHEME@
+
+@datarootdir@
+
+@prefix@

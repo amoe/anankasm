@@ -21,7 +21,8 @@
   ; _string*/utf-8, which we avoid for the moment.
   (default-_string-type _string/utf-8)
 
-  (define lib (ffi-lib "libtag_c"))
+  ; Debian's libtagc0 package requires the version number.
+  (define lib (ffi-lib "libtag_c" "0"))
 
 
   ; types

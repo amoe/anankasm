@@ -30,6 +30,8 @@
 ; ENTRY POINT
 (define (main . args)
   (let ((args (configure args)))
+    (check-permissions args)
+
     (let ((times (save-mtimes args)))
       (define (cleanup v)  (load-mtimes args times))
 
@@ -41,6 +43,11 @@
         
           (load-mtimes args times)
           (move-files tmpl args))))))
+
+(define (check-permissions lst)
+  (when (not (every writable? lst))
+    (error 'check-permissions
+           "not all files are writable, please fix and rerun")))
 
 (define (files->template . args)
   (define tags
@@ -262,7 +269,9 @@
 
 (define (load-mtimes files times)
   (for-each file-or-directory-modify-seconds files times))
+
 (define (just-one? lst) (= (length lst) 1))
+
 (define (tag-proc/cleanup proc file)
   (let ((f (taglib:file-new file)))
     (let ((datum (proc (taglib:file-tag f))))

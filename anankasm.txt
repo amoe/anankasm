@@ -34,3 +34,11 @@ smidgen of bash, or a smattering of expletives to complete --
 and who has time for all of it anyway?" - Cowbell project.
 
 Answer = me.
+
+
+OGG SUPPORT
+-----------
+Oggs currently work 90%, the only missing thing is ReplayGain.  You can easily
+apply RG to Vorbis post facto like so:
+
+  vorbisgain -a ~/music/ikonika/2008-millie-direct/*.ogg

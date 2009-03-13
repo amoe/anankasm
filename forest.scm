@@ -12,7 +12,7 @@
 ;   no relative pathnames, must be absolute
 
 ; gened with df -B1
-(define *sansa-size* 8005644288)
+(define *sansa-size* 7914237952)
 
 (define (gigabytes x)
   (* x (expt 2 30)))
@@ -24,6 +24,7 @@
         (new (second args)))
     (say "building forest from ~a to ~a" old new)
     (say "warning: any existing forest in ~a will be nuked" new)
+    ; FIXME: ignore non-existing dirs
     (delete-directory/files new)
     (for-each
       (lambda (dir)

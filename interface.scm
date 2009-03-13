@@ -13,6 +13,7 @@
  choose
  say
  debug
+ writable?
  
  xformat)
 
@@ -29,6 +30,7 @@
       (let ((result (read (open-input-file path))))
         (delete-file path)
         result))))
+
 
 ; Run editor, which can be an arbitrary shell command
 ; 'shell-quote' is used to escape arguments
@@ -139,3 +141,9 @@
 (define (format-usage opts)
   ; We can't use max, since we also need to kow the indx of what we seek
   (apply max (map (compose string-length second) opts)))
+
+(define (writable? path)
+  (->boolean (memq 'write (file-or-directory-permissions path))))
+
+(define (->boolean x)
+  (if x #t #f))

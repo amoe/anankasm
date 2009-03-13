@@ -1,3 +1,10 @@
+BUG BUG BUG!!!!
+
+mp3gain <opts> temporary-copy-of-file
+mp3gain -s c temporary-copy-of-file
+Applying this gives the wrong results from -s c!  Too low results - all around 0.05 or something
+Note that MP3s that are silent in rhythmbox are the same ones that have correct tagging with decibel suffix included  .  So other players must discard the RG info on encountering a malformed tag whereas RB stupidly decides to apply them anyway.
+
 WISHLIST
 
 - Ogg support
