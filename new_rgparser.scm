@@ -4,9 +4,11 @@
 (require srfi/1)
 (require srfi/26)
 
-(require "naturalize.scm")
+(require "interface.scm")
+(require "options.scm")
 
-(provide replaygain-2)
+;(define f0 (let ((d "/home/amoe/mortville")) (map path->string (map (lambda (x) (build-path d x)) (directory-list d)))))
+(provide replaygain)
 
 ; The RG-MAP - maps database keys to a pair (TAG-SUFFIX, TRANSFORM-PROC).
 ; When the key is recognized, TRANSFORM-PROC is applied to its value to
@@ -18,16 +20,22 @@
 	       ("Max Amplitude" . (peak . (unquote format-peak))))))
 
 ; Replaygain algorithm mk2
-(define (replaygain-2 files)
+(define (replaygain files)
   (let-values (((header tracks album)
 		(analyze files)))
     (let ((rg-index (scan-header header)))
       (for-each apply-text-tags
 	(map
-	  (cute append <> (album-tags album rg-index))
+	  (possibly (not (option 'mastering-disparity))
+		    (cute append <> (album-tags album rg-index)))
 	  (map (cute path->track-tags tracks rg-index <>)
 	       files))
 	files))))
+
+(define (possibly pred? proc)
+  (if pred?
+      (lambda (x) (proc x))
+      (lambda (x) x)))
 
 ; Bit random, but basically this converts a universal (generic) tag like
 ; 'gain, which is a symbol, to a specific tag in a context like
@@ -111,8 +119,10 @@
 			  files))))
     (slurp-lines (first l))))
 
-(define (slurp-lines port)
-  (let ((l (read-line port)))
-    (if (eof-object? l)
-        '()
-        (cons l (slurp-lines port)))))
+(define (apply-text-tags tags file)
+  (for-each
+   (lambda (tag)
+     (let ((str (format "--set-user-text-frame=~a:~a"
+                        (car tag) (cdr tag))))
+       (apply run-command (list *default-eyed3* str file))))
+   tags))

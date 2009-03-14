@@ -12,11 +12,9 @@
 (require "histogram.scm")
 (require "interface.scm")
 (require "options.scm")
+(require "new_rgparser.scm")
 
-(provide main apply-text-tags)
-
-(define *default-eyed3*    "/usr/bin/eyeD3")
-(define *default-mp3gain*  "/usr/bin/mp3gain")
+(provide main)
 
 (define *tag-map*
   (list
@@ -39,7 +37,11 @@
         (let ((tmpl (pass-to-editor (apply files->template args))))
           (strip-tags args)
           (apply-tags tmpl args)
+
+	  (display "applying replaygain... ")
+	  (flush-output)
           (replaygain args)
+	  (say "done.")
         
           (load-mtimes args times)
           (move-files tmpl args))))))
@@ -89,32 +91,33 @@
 ; See link below for the source of this algorithm.
 ; http://www.hydrogenaudio.org/forums/index.php?showtopic=42005
 ; Please make sure you have write permissions on files.
-(define (replaygain files)
-  ; igoldgain algorithm
-  ; first, copy all files
-  (display "calculating replaygain values... ")
-  (flush-output)
+; This is OLD.  Please remove it.
+;; (define (replaygain-0 files)
+;;   ; igoldgain algorithm
+;;   ; first, copy all files
+;;   (display "calculating replaygain values... ")
+;;   (flush-output)
 
-  (let ((tmp (map
-               (cute make-temporary-file "naturalize-~a.mp3" <>)
-               files))
-        (options (list "-s" "r" "-c" "-a")))
-    (apply run-command
-           (cons *default-mp3gain*
-                 (append options (map path->string tmp))))
-    (say "done.")
+;;   (let ((tmp (map
+;;                (cute make-temporary-file "naturalize-~a.mp3" <>)
+;;                files))
+;;         (options (list "-s" "r" "-c" "-a")))
+;;     (apply run-command
+;;            (cons *default-mp3gain*
+;;                  (append options (map path->string tmp))))
+;;     (say "done.")
 
-    (debug "applying tags")
+;;     (debug "applying tags")
 
-     (for-each
-       (lambda (orig copy)
-         (apply-text-tags (gain-info-from-tags copy)
-                          orig))
+;;      (for-each
+;;        (lambda (orig copy)
+;;          (apply-text-tags (gain-info-from-tags copy)
+;;                           orig))
      
-       files (map path->string tmp))
+;;        files (map path->string tmp))
     
-     (debug "deleting tempfiles")
-    (for-each delete-file tmp)))
+;;      (debug "deleting tempfiles")
+;;     (for-each delete-file tmp)))
 
 ; Need to create all preceding folders before being able to move here.
 (define (move-files tmpl files)
@@ -205,48 +208,36 @@
         (lambda (abbrev)
           (memq (cadr abbrev) (global-tag-list)))
         *abbreviated-tag-map*))))
-        
 
-(define (gain-info-from-tags file)
-  (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
-    (let ((output (slurp-lines (first l))))
+; OLD RG CODE, PLZ TO REMOVE AFTER TEST
+;; (define (gain-info-from-tags file)
+;;   (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
+;;     (let ((output (slurp-lines (first l))))
 
-    (close-input-port (first l))
-    (close-output-port (second l))
-    (close-input-port (fourth l))
+;;     (close-input-port (first l))
+;;     (close-output-port (second l))
+;;     (close-input-port (fourth l))
     
-    (filter-map rg-tag output))))
+;;     (filter-map rg-tag output))))
 
-; Return: #f if no match, or the appropriate pair if match
-; FILTER-MAP this function across the returned list to get the correct stuff
+;; ; Return: #f if no match, or the appropriate pair if match
+;; ; FILTER-MAP this function across the returned list to get the correct stuff
 
-(define (rg-tag line)
-  (any
-    (lambda (x)
-      (if (regexp-match? (car x) line)
-          (cons (cdr x) (after-colon line))
-          #f))
-    (rg-lines)))
+;; (define (rg-tag line)
+;;   (any
+;;     (lambda (x)
+;;       (if (regexp-match? (car x) line)
+;;           (cons (cdr x) (after-colon line))
+;;           #f))
+;;     (rg-lines)))
 
-(define (apply-text-tags tags file)
-  (for-each
-   (lambda (tag)
-     (let ((str (format "--set-user-text-frame=~a:~a"
-                        (car tag) (cdr tag))))
-       (apply run-command (list *default-eyed3* str file))))
-   tags))
 
-(define (after-colon str)
-  (let ((x (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
-    (if x
-      (cadr x)
-      (error "internal fuckup: invalid string passed to after-colon"))))
+;; (define (after-colon str)
+;;   (let ((x (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
+;;     (if x
+;;       (cadr x)
+;;       (error "internal fuckup: invalid string passed to after-colon"))))
 
-(define (slurp-lines port)
-  (let ((l (read-line port)))
-    (if (eof-object? l)
-        '()
-        (cons l (slurp-lines port)))))
 
 ; At the moment we're not displaying the histogram frequencies to the user,
 ; we're just sorting by them, so option 1 always has the highest frequency
@@ -302,3 +293,4 @@
        (lambda (t) (set-tag t (cdr tag))))
      file))
    files))
+

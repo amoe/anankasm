@@ -14,10 +14,14 @@
  say
  debug
  writable?
- 
- xformat)
+ xformat
+ slurp-lines
+ *default-eyed3*
+ *default-mp3gain*)
 
 (define *default-editor* "/usr/bin/nano")
+(define *default-eyed3*    "/usr/bin/eyeD3")
+(define *default-mp3gain*  "/usr/bin/mp3gain")
 
 (define (pass-to-editor datum)
   (let ((path (make-temporary-file "naturalize-~a.scm")))
@@ -147,3 +151,9 @@
 
 (define (->boolean x)
   (if x #t #f))
+
+(define (slurp-lines port)
+  (let ((l (read-line port)))
+    (if (eof-object? l)
+        '()
+        (cons l (slurp-lines port)))))

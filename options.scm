@@ -7,7 +7,6 @@
   (require srfi/78)
 
   (provide
-    rg-lines
     global-tag-list
     local-tag-list
     filename-template
@@ -36,15 +35,6 @@
      (("-P" "--mangle-mtimes")       "don't preserve file mtimes" #t)
      #:args (path1 . paths)
      (cons path1 paths)))
-
-  (define (rg-lines)
-    (if (option 'mastering-disparity)
-        '((#rx"Recommended \"Track\" dB change:"      . replaygain_track_gain)
-          (#rx"Max PCM sample at current gain:"       . replaygain_track_peak))
-        '((#rx"Recommended \"Track\" dB change:"      . replaygain_track_gain)
-          (#rx"Max PCM sample at current gain:"       . replaygain_track_peak)
-          (#rx"Recommended \"Album\" dB change:"      . replaygain_album_gain)
-          (#rx"Max Album PCM sample at current gain:" . replaygain_album_peak))))
 
   (define (global-tag-list)
     (if (option 'va-mode)
@@ -86,7 +76,6 @@
     (let ((filenames '("test1.mp3" "test2.mp3")))
       (check (configure filenames) => filenames))
 
-    (check (alist? (rg-lines)) => #t)
     (check (list? (global-tag-list)) => #t)
     (check (list? (local-tag-list)) => #t)
 
