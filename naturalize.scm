@@ -13,7 +13,7 @@
 (require "interface.scm")
 (require "options.scm")
 
-(provide main)
+(provide main apply-text-tags)
 
 (define *default-eyed3*    "/usr/bin/eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
