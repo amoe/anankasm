@@ -6,7 +6,8 @@ modules = taglib.scm \
           naturalize.scm \
           interface.scm \
           options.scm \
-          histogram.scm
+          histogram.scm \
+          replaygain.scm
 
 install:
 	mkdir -p $(libdir)

@@ -12,7 +12,7 @@
 (require "histogram.scm")
 (require "interface.scm")
 (require "options.scm")
-(require "new_rgparser.scm")
+(require "replaygain.scm")
 
 (provide main)
 
@@ -131,7 +131,7 @@
 
 ; WARNING: DARK DARK MAGIC
 (define (make-parents path)
-  (debug "making parents")
+  ;(debug "making parents")
   (for-each make-directory/uncaring
     (map (cute apply build-path <>)
          (map reverse

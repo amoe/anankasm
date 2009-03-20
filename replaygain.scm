@@ -112,12 +112,24 @@
 	       (loop (cdr lst) (+ idx 1)))))
       (else (loop (cdr lst) (+ idx 1))))))
     
-; NB: It's possible that this suffers from that nasty bug of old.
+; NB: You MUST consume stderr before reading stdin, otherwise mp3gain will
+; hang in sleeping state as mentioned in the comments for system/silent*.
+; This is a _really weird bug_, so don't be caught out by it.
 (define (run-mp3gain files)
-  (let ((l (apply process*
+ (let ((l (apply process*
 		  (append (list "/usr/bin/mp3gain" "-s" "s" "-o")
 			  files))))
-    (slurp-lines (first l))))
+   (consume (fourth l))
+
+   (let ((output (slurp-lines (first l))))
+
+    ((fifth l) 'wait)
+    
+    (close-input-port (first l))
+    (close-output-port (second l))
+    (close-input-port (fourth l))
+    output)))
+    
 
 (define (apply-text-tags tags file)
   (for-each

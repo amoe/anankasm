@@ -15,6 +15,7 @@
  debug
  writable?
  xformat
+ consume
  slurp-lines
  *default-eyed3*
  *default-mp3gain*)
