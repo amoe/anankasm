@@ -1,31 +1,5 @@
-Name for MP3 system
-abcde + patch + vc-wrapper + munge_tag
-naturalize-mp3
-rhythmbox patch
-scan-tree-adjusting-timestamps
-fix-RBDB
-
-vorbisgain original source, since Debian maintainers removed an essential option
-naturalize-mp3 needs to run replaygain-igold
-tag editor can pass over to emacs
-fetch tags w/discogs API
-
-cddb preprocessor to fix fuckups in DB data
-
-steps in naturalization:
-
-1.  cddb/discogs - scheme/discogs API
-2.  tag - eyeD3?
-3.  move - munge_tag
-4.  replaygain - igoldgain
-
-naturalize-album
-
-Artist is 'The Hold Steady'.  Wanna edit?  [y/n]
-Searching Discogs for 'The Hold Steady'...  found.
-Album is 'Boys and Girls in AmericaVINYL'.  Wanna edit? [y/n]
-
-munge_cddb
+ANANKASM
+--------
 
 "Do you have an expansive collection of 90's era experimental
 polka rivaling only museums? How do you keep it tidy? Chances
@@ -38,7 +12,26 @@ Answer = me.
 
 OGG SUPPORT
 -----------
-Oggs currently work 90%, the only missing thing is ReplayGain.  You can easily
-apply RG to Vorbis post facto like so:
+Oggs currently work 90%, the only missing thing is
+ReplayGain.  You can easily apply RG to Vorbis post facto like so:
 
   vorbisgain -a ~/music/ikonika/2008-millie-direct/*.ogg
+
+
+HOW TO INSTALL
+--------------
+Anankasm uses abcde as its backend for the 'anankasm rip' command.
+abcde is currently maintained by Jesus Climent, a Debian developer.
+The non-Debian abcde site is dead at this point, and so is the SVN.
+According to the Debian bug tracker, the SVN contains bugfixes which
+have not been applied to the Debian packages.  Given that the same
+abcde version is current for both stable, testing, and unstable, it
+doesn't seem unfair to say that these patches are unlikely to be
+applied in the near future, and that development has stalled.  This is
+not problematic in itself, since abcde has very few bugs.  However,
+the SVN apparently contains a fix for bug #415365, which anankasm
+depends on.  As a result, anankasm bundles a version of abcde which is
+pre-patched for this problem.  It will not conflict with the installed
+Debian abcde.  If you wish to patch your abcde, the patch is included
+in the Anankasm distribution.
+

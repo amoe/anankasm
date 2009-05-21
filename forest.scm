@@ -11,8 +11,14 @@
 ;   make-parents creates dirs that do not have the mtime of their duplicates
 ;   no relative pathnames, must be absolute
 
-; gened with df -B1
-(define *sansa-size* 7914237952)
+; "df -B1" value
+;(define *sansa-size* 8005644288)
+
+; 8005644288 - (64 * 2^20)
+;(define *sansa-size* 7938535424)
+
+; More recent "removed" value
+(define *sansa-size* 7913648128)
 
 (define (gigabytes x)
   (* x (expt 2 30)))
@@ -55,11 +61,13 @@
 ; build alist: leaf -> mtime, sort on mtime, cdr down the list accumulating a
 ; new one, stop when predicate is true.  possibly the span and break procs?
 
-; The mtime of a leaf-dir is the highest mtime in it
+; The mtime of a leaf-dir is the highest mtime in it.  Or the mtime of the 
+; dir itself for empty dirs.
 (define (leaf-dir:mtime path)
-  (apply max
-         (map file-or-directory-modify-seconds
-              (directory-list/full path))))
+  (let ((files (directory-list/full path)))
+    (if (null? files)
+        (file-or-directory-modify-seconds path)
+        (apply max (map file-or-directory-modify-seconds files)))))
 
 ; The size of a leaf-dir is the sum of the size of its component files
 (define (leaf-dir:size  path)

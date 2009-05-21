@@ -88,44 +88,12 @@
 
   (apply-local-tags (template:local-tags tmpl) files))
 
-; See link below for the source of this algorithm.
-; http://www.hydrogenaudio.org/forums/index.php?showtopic=42005
-; Please make sure you have write permissions on files.
-; This is OLD.  Please remove it.
-;; (define (replaygain-0 files)
-;;   ; igoldgain algorithm
-;;   ; first, copy all files
-;;   (display "calculating replaygain values... ")
-;;   (flush-output)
-
-;;   (let ((tmp (map
-;;                (cute make-temporary-file "naturalize-~a.mp3" <>)
-;;                files))
-;;         (options (list "-s" "r" "-c" "-a")))
-;;     (apply run-command
-;;            (cons *default-mp3gain*
-;;                  (append options (map path->string tmp))))
-;;     (say "done.")
-
-;;     (debug "applying tags")
-
-;;      (for-each
-;;        (lambda (orig copy)
-;;          (apply-text-tags (gain-info-from-tags copy)
-;;                           orig))
-     
-;;        files (map path->string tmp))
-    
-;;      (debug "deleting tempfiles")
-;;     (for-each delete-file tmp)))
-
-; Need to create all preceding folders before being able to move here.
 (define (move-files tmpl files)
   (debug "moving files to correct locations")
   (for-each
    (lambda (old new)
      (make-parents new)
-     (rename-file-or-directory old new))
+     (rename-file-or-directory old new))    ; FIXME: only attempt move if !=
    files (template->new-names tmpl files)))
 
 
@@ -141,9 +109,8 @@
                 cdr
                 (cdr (reverse (explode-path path))))))))
 
-; warning: race condition
 (define (make-directory/uncaring path)
-  (when (not (directory-exists? path))
+  (with-handlers ((exn:fail:filesystem:exists? void))
     (make-directory path)))
 
 (define (identity x) x)
@@ -208,36 +175,6 @@
         (lambda (abbrev)
           (memq (cadr abbrev) (global-tag-list)))
         *abbreviated-tag-map*))))
-
-; OLD RG CODE, PLZ TO REMOVE AFTER TEST
-;; (define (gain-info-from-tags file)
-;;   (let ((l (apply process* (list *default-mp3gain* "-s" "c" file))))
-;;     (let ((output (slurp-lines (first l))))
-
-;;     (close-input-port (first l))
-;;     (close-output-port (second l))
-;;     (close-input-port (fourth l))
-    
-;;     (filter-map rg-tag output))))
-
-;; ; Return: #f if no match, or the appropriate pair if match
-;; ; FILTER-MAP this function across the returned list to get the correct stuff
-
-;; (define (rg-tag line)
-;;   (any
-;;     (lambda (x)
-;;       (if (regexp-match? (car x) line)
-;;           (cons (cdr x) (after-colon line))
-;;           #f))
-;;     (rg-lines)))
-
-
-;; (define (after-colon str)
-;;   (let ((x (regexp-match #px".*:\\s*([-\\.\\d]+)" str)))
-;;     (if x
-;;       (cadr x)
-;;       (error "internal fuckup: invalid string passed to after-colon"))))
-
 
 ; At the moment we're not displaying the histogram frequencies to the user,
 ; we're just sorting by them, so option 1 always has the highest frequency
