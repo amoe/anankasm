@@ -15,11 +15,12 @@
     option!)
 
   (define *options*
-    '((va-mode            . #f)
-     (mastering-disparity . #f)
-     (preserve-mtimes     . #t)
-     (debug               . #t)
-     (verbose             . #f)))
+    '((va-mode             . #f)
+     (mastering-disparity  . #f)
+     (preserve-mtimes      . #t)
+     (debug                . #t)
+     (verbose              . #f)
+     (number-automatically . #f)))
 
   (define (configure args)
     (command-line
@@ -33,6 +34,8 @@
      (("-M" "--mastering-disparity") "do not scan album gain"
                                       (option! 'mastering-disparity #t))
      (("-P" "--mangle-mtimes")       "don't preserve file mtimes" #t)
+     (("-n" "--number-automatically") n "automatically add track numbers"
+                                      (option! 'number-automatically n))
      #:args (path1 . paths)
      (cons path1 paths)))
 

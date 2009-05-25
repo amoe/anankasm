@@ -9,6 +9,7 @@ WISHLIST
 
 - Ogg support
 - M3U playlist creator
+- automatically number
 
 BUGS
 

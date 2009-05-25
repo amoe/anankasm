@@ -96,22 +96,11 @@
      (rename-file-or-directory old new))    ; FIXME: only attempt move if !=
    files (template->new-names tmpl files)))
 
-
-; WARNING: DARK DARK MAGIC
+; Make the parents of PATH
 (define (make-parents path)
-  ;(debug "making parents")
-  (for-each make-directory/uncaring
-    (map (cute apply build-path <>)
-         (map reverse
-              (unfold-right
-                null?
-                identity
-                cdr
-                (cdr (reverse (explode-path path))))))))
-
-(define (make-directory/uncaring path)
-  (with-handlers ((exn:fail:filesystem:exists? void))
-    (make-directory path)))
+  (let-values (((base name must-be-dir?)
+                (split-path path)))
+    (make-directory* base)))
 
 (define (identity x) x)
 

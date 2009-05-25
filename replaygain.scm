@@ -19,8 +19,27 @@
   (quasiquote (("dB gain"       . (gain . (unquote format-gain)))
 	       ("Max Amplitude" . (peak . (unquote format-peak))))))
 
-; Replaygain algorithm mk2
+; Dispatch the correct replaygain algorithm based on file extension
 (define (replaygain files)
+  (let ((mp3? (lambda (s)
+                (bytes=? (filename-extension s) #"mp3")))
+        (ogg? (lambda (s)
+                (bytes=? (filename-extension s) #"ogg"))))
+    (cond
+      ((andmap mp3? files)  (replaygain/mp3 files))
+      ((andmap ogg? files)  (replaygain/ogg files))
+      (else
+        (error
+          'replaygain
+          "cannot apply replaygain to heterogeneous audio formats")))))
+
+(define (replaygain/ogg files)
+  (apply run-command
+        (append
+          '("/usr/bin/vorbisgain" "-a") files)))
+
+; Replaygain algorithm mk2
+(define (replaygain/mp3 files)
   (let-values (((header tracks album)
 		(analyze files)))
     (let ((rg-index (scan-header header)))
@@ -31,6 +50,7 @@
 	  (map (cute path->track-tags tracks rg-index <>)
 	       files))
 	files))))
+
 
 (define (possibly pred? proc)
   (if pred?
