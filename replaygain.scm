@@ -7,7 +7,6 @@
 (require "interface.scm")
 (require "options.scm")
 
-;(define f0 (let ((d "/home/amoe/mortville")) (map path->string (map (lambda (x) (build-path d x)) (directory-list d)))))
 (provide replaygain)
 
 ; The RG-MAP - maps database keys to a pair (TAG-SUFFIX, TRANSFORM-PROC).

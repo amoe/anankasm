@@ -1,3 +1,6 @@
+If a move would result in moving to an existing directory, it can't be
+performed.
+
 BUG BUG BUG!!!!
 
 mp3gain <opts> temporary-copy-of-file
@@ -16,6 +19,7 @@ BUGS
 - Currently naturalized MP3s are silent when played in Rhythmbox
 - Error messages should look nicer.
 - Passing no files should display the usage message
+
 
 OPTIMIZE
 
