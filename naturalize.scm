@@ -40,7 +40,8 @@
 
 	  (display "applying replaygain... ")
 	  (flush-output)
-          (replaygain args)
+          (unless (option 'skip-replaygain)
+            (replaygain args))
 	  (say "done.")
         
           (load-mtimes args times)
@@ -61,13 +62,16 @@
      (global-tag-list)))
      
   (define tracks
-    (map
-     (lambda (file)
-       (map
-        (lambda (tag)
-          (tag-proc/cleanup (lookup-getter tag) file))
-        (local-tag-list)))
-     args))
+    (let ((track-indices (iota (length args) 1)))
+      (map
+       (lambda (file index)
+         (map (lambda (tag)
+                (if (and (eq? tag 'tracknumber)
+                         (option 'number-automatically))
+                    index
+                    (tag-proc/cleanup (lookup-getter tag) file)))
+              (local-tag-list)))
+       args track-indices)))
 
   (cons tags tracks))
 

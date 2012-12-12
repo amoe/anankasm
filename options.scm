@@ -20,7 +20,8 @@
      (preserve-mtimes      . #t)
      (debug                . #t)
      (verbose              . #f)
-     (number-automatically . #f)))
+     (number-automatically . #f)
+     (skip-replaygain . #f)))
 
   (define (configure args)
     (command-line
@@ -34,8 +35,10 @@
      (("-M" "--mastering-disparity") "do not scan album gain"
                                       (option! 'mastering-disparity #t))
      (("-P" "--mangle-mtimes")       "don't preserve file mtimes" #t)
-     (("-n" "--number-automatically") n "automatically add track numbers"
-                                      (option! 'number-automatically n))
+     (("-n" "--number-automatically") "automatically add track numbers"
+                                      (option! 'number-automatically #t))
+     (("-R" "--skip-replaygain") "do not apply replaygain"
+                                 (option! 'skip-replaygain #t))
      #:args (path1 . paths)
      (cons path1 paths)))
 
