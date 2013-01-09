@@ -27,6 +27,8 @@
 
 ; ENTRY POINT
 (define (main . args)
+  (check-commands)
+  
   (let ((args (configure args)))
     (check-permissions args)
 
@@ -52,7 +54,15 @@
     (error 'check-permissions
            "not all files are writable, please fix and rerun")))
 
+(define (check-commands)
+  (let loop ((required-executables '("mp3gain" "vorbisgain" "eyeD3")))
+    (when (not (null? required-executables))
+      (when (not (find-executable-path (car required-executables)))
+        (error 'check-commands "command not found"))
+      (loop (cdr required-executables)))))
+
 (define (files->template . args)
+  
   (define tags
     (map
      (lambda (tag)
@@ -60,6 +70,7 @@
              (apply select-from-tags
                     (cons (lookup-getter tag) args))))
      (global-tag-list)))
+
      
   (define tracks
     (let ((track-indices (iota (length args) 1)))
