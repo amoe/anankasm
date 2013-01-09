@@ -1,4 +1,4 @@
-#! /usr/local/bin/mzscheme
+#! /usr/bin/racket
 
 #lang scheme
 
