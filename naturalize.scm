@@ -57,8 +57,9 @@
 (define (check-commands)
   (let loop ((required-executables '("mp3gain" "vorbisgain" "eyeD3")))
     (when (not (null? required-executables))
-      (when (not (find-executable-path (car required-executables)))
-        (error 'check-commands "command not found"))
+      (let ((command (car required-executables)))
+        (when (not (find-executable-path command))
+          (error 'check-commands "command not found: ~a" command)))
       (loop (cdr required-executables)))))
 
 (define (files->template . args)
