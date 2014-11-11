@@ -1,0 +1,6 @@
+Music tagger for disparate sources, old code half broken, needs PLT Scheme
+(now Racket) plus a bunch of external tools.
+
+Any existing docs are probably lies
+
+Have a wonderful day
