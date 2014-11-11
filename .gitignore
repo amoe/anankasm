@@ -1,0 +1,7 @@
+dist.scm
+anankasm.mk
+autom4te.cache/
+config.log
+config.status
+configure
+makefile
