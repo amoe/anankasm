@@ -1,5 +1,15 @@
-@MZSCHEME@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
 
-@datarootdir@
+install:
+	cp dist.scm $(bindir)/naturalize
+	chmod +x $(bindir)/naturalize
 
-@prefix@
+
+
+#@RACKET@
+
+#@datarootdir@
+
+#@prefix@

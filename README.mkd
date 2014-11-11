@@ -4,3 +4,8 @@ Music tagger for disparate sources, old code half broken, needs PLT Scheme
 Any existing docs are probably lies
 
 Have a wonderful day
+
+Instructions
+------------
+
+    $ sh bootstrap.sh
