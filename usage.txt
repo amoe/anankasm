@@ -1,0 +1,12 @@
+Usage: naturalize [OPTION]... MP3...
+Integrate MP3s into a tagged collection.
+
+  -M, --mastering-disparity    do not scan album gain
+  -P, --mangle-mtimes          do not preserve file mtimes
+  -v, --verbose                show output from subprocesses
+  -V, --va-mode                various artists mode
+
+naturalize will tag, add ReplayGain information, and rename files
+appropriately.
+
+Report bugs to <amoebae@gmail.com>.

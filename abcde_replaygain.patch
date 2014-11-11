@@ -1,0 +1,11 @@
+diff -Nur abcde-2.3.99.6.orig/abcde abcde-2.3.99.6/abcde
+--- abcde-2.3.99.6.orig/abcde	2006-08-05 20:14:00.000000000 +0100
++++ abcde-2.3.99.6/abcde	2009-03-22 19:12:36.000000000 +0000
+@@ -508,6 +508,7 @@
+ 				TRACKFILE="$(mungefilename "$TRACKNAME")"
+ 				ARTISTFILE="$(mungefilename "$TRACKARTIST")"
+ 				ALBUMFILE="$(mungefilename "$DALBUM")"
++                                YEAR=${CDYEAR:-$CDYEAR}
+ 				gettracknum
+ 				if [ "$ONETRACK" = "y" ]; then 
+ 					if [ "$VARIOUSARTISTS" = "y" ]; then

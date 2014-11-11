@@ -1,0 +1,29 @@
+PADTRACKS=y
+OUTPUTDIR=~/music
+WAVOUTPUTDIR=/tmp
+
+OUTPUTTYPE=vorbis
+OUTPUTFORMAT='${ARTISTFILE}/${YEAR}-${ALBUMFILE}/${TRACKNUM}-${TRACKFILE}'
+VAOUTPUTFORMAT='various/${YEAR}-${ALBUMFILE}/${TRACKNUM}-${ARTISTFILE}_-_${TRACKFILE}'
+
+EJECTCD=y
+
+CDDBLOCALDIR=~/etc/cddb
+CDDBCOPYLOCAL=y
+CDDBUSELOCAL=y
+
+OGGENCOPTS="-q 4"
+CDPARANOIAOPTS="-z" 
+
+VORBISCOMMENT=/usr/local/bin/vorbiscomment-wrapper
+
+#CDPARANOIA=/home/amoe/virtual-cdparanoia.sh
+
+BATCHNORM=y
+
+mungefilename() {
+    echo "$1" | munge-tag
+}
+
+# TODO:
+# Get RG working properly - done w/patch to abcde

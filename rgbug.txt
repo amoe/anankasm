@@ -1,0 +1,303 @@
+REPLAYGAIN BUG
+--------------
+
+Aim: get gains consistent between mp3gain and vorbisgain.
+This won't be totally possible, since the algs are slightly different.
+We use Debian's vorbisgain and mp3gain.
+It's important to note that the test mp3 was generated with --noreplaygain
+option in lame, this is important to avoid confusion.
+
+First, we need to determine what commands we use at present to get the gains.
+Since commands modify the files, we must make copies before.
+
+vorbisgain sesh:
+
+$ cp test.ogg test-gained.ogg; vorbisgain -a test-gained.ogg; vorbiscomment -l test-gained.ogg
+Analyzing files...
+
+   Gain   |  Peak  | Scale | New Peak | Track
+----------+--------+-------+----------+------
+ -5.74 dB |  37340 |  0.52 |    19283 | test-gained.ogg
+
+Recommended Album Gain: -5.74 dB
+Writing tags to 'test-gained.ogg'
+REPLAYGAIN_TRACK_PEAK=1.13956976
+REPLAYGAIN_TRACK_GAIN=-5.74 dB
+REPLAYGAIN_ALBUM_PEAK=1.13956976
+REPLAYGAIN_ALBUM_GAIN=-5.74 dB
+
+We must now find out which baroque-ass mp3gain commands we use, since the
+igoldgain algorithm is rather complex.
+
+Looks like the command to apply gain to a dummy copy is as follows:
+
+$ mp3gain -s r -c -a <file>
+
+And the command to read the tags from said dummy copy is as follows:
+
+$ mp3gain -s c <file>
+
+
+We can mimic the process as such:
+
+vlinder% cp test.mp3 test-gained.mp3; mp3gain -s r -c -a test-gained.mp3; mp3gain -s c test-gained.mp3; rm test-gained.mp3
+test-gained.mp3
+Applying mp3 gain change of -4 to test-gained.mp3...
+test-gained.mp3                                    
+Recommended "Track" dB change: -0.180000
+Recommended "Track" mp3 gain change: 0
+Max PCM sample at current gain: 20089.176064
+Max mp3 global gain field: 242
+Min mp3 global gain field: 42
+Recommended "Album" dB change: -0.180000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 20089.176064
+Max Album mp3 global gain field: 242
+Min Album mp3 global gain field: 42
+
+As you can see, the results here are not close to correct.  -0.18dB change is
+WAY off, too much to be realistic.  Let's see if a more normal command can give us a more normal gain.
+
+vlinder% cp test.mp3 test-gained.mp3
+vlinder% mp3gain test-gained.mp3 
+test-gained.mp3
+Recommended "Track" dB change: -6.200000         
+Recommended "Track" mp3 gain change: -4
+Max PCM sample at current gain: 40178.373563
+Max mp3 global gain field: 246
+Min mp3 global gain field: 46
+
+
+Recommended "Album" dB change for all files: -6.200000
+Recommended "Album" mp3 gain change for all files: -4
+
+Skip some more investigation, the upshot of which is that: the addition of the
+-a switch (album mode) changes the value stored in the tag to the bogus one.
+But, bizarrely, it ALSO changes the track gain to the bogus one!  Check this:
+
+vlinder% cp test.mp3 test-gained.mp3 
+vlinder% mp3gain -a test-gained.mp3   
+test-gained.mp3
+Applying mp3 gain change of -4 to test-gained.mp3...
+vlinder% mp3gain -s c test-gained.mp3
+test-gained.mp3
+Recommended "Track" dB change: -0.180000
+Recommended "Track" mp3 gain change: 0
+Max PCM sample at current gain: 20089.176064
+Max mp3 global gain field: 242
+Min mp3 global gain field: 42
+Recommended "Album" dB change: -0.180000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 20089.176064
+Max Album mp3 global gain field: 242
+Min Album mp3 global gain field: 42
+
+So what's happening here?  What happened is that the album gain is taking
+precedence for some reason.  So (sigh) we're gonna need to extend the
+behavioural check to two songs.
+
+Let's speculate about some possible solutions in the meantime.  One could be
+to simply use mp3gain's '-d' switch to apply a negative increment to match
+vorbisgain's output.  However, this doesn't take into account possible
+algorithmic disparities.  That is, the increment required to bring them into
+line might not be a constant.  If this is true, the only non-hack solution
+will be to DECODE the mp3 and use the wavegain output to scale it.  To bring
+this into line with the abcde(1) series of hacks, the only obvious way is to
+RE-DECODE the vorbis file AFTER creating it, since abcde(1) only provides a
+post-processing hook.  Indeed, even if it did, it's not clear how to store the
+correct values between runs.  Providence could still provide that vorbisgain(1)
+and wavegain(1) are similar enough that the returned values would be near-enough
+identical to not require this bastard step - which would of course be delicious,
+and ideal (or at least, not bad) efficiency-wise since mp3gain(1) has to decode
+the mp3s anyway, and I'm sure the decoding algorithm is by no means the fastest - so in this case we would not be wasting time at least.  However, this is
+predicated on a random, though easy to test, assumption.
+
+We're gonna move the generated files to a directory named clean/ so we don't get
+confused about which are clean (untagged) and which are dirty (tagged and
+possibly mp3gained).  This also makes the shell commands simpler.
+
+vlinder% cp clean/*.ogg .; vorbisgain -a *.ogg; for file in *.ogg; do echo "$file:"; vorbiscomment $file; done              
+Analyzing files...
+
+   Gain   |  Peak  | Scale | New Peak | Track
+----------+--------+-------+----------+------
+ -5.74 dB |  37340 |  0.52 |    19283 | test1.ogg
+ -7.26 dB |  38778 |  0.43 |    16811 | test2.ogg
+
+Recommended Album Gain: -6.63 dB
+Writing tags to 'test1.ogg'
+Writing tags to 'test2.ogg'
+test1.ogg:
+REPLAYGAIN_TRACK_PEAK=1.13956976
+REPLAYGAIN_TRACK_GAIN=-5.74 dB
+REPLAYGAIN_ALBUM_PEAK=1.18345642
+REPLAYGAIN_ALBUM_GAIN=-6.63 dB
+test2.ogg:
+REPLAYGAIN_TRACK_PEAK=1.18345642
+REPLAYGAIN_TRACK_GAIN=-7.26 dB
+REPLAYGAIN_ALBUM_PEAK=1.18345642
+REPLAYGAIN_ALBUM_GAIN=-6.63 dB
+
+
+Best to refrain from judgement here until we see the other results.
+
+vlinder% cp clean/*.mp3 .; mp3gain -a -c -s r *.mp3; mp3gain -s c *.mp3
+test1.mp3
+test2.mp3                                        
+Applying mp3 gain change of -4 to test1.mp3...   
+Applying mp3 gain change of -4 to test2.mp3...     
+test1.mp3                                          
+Recommended "Track" dB change: -0.180000
+Recommended "Track" mp3 gain change: 0
+Max PCM sample at current gain: 20089.176064
+Max mp3 global gain field: 242
+Min mp3 global gain field: 42
+Recommended "Album" dB change: -0.720000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 20089.176064
+Max Album mp3 global gain field: 242
+Min Album mp3 global gain field: 42
+
+test2.mp3
+Recommended "Track" dB change: -1.040000
+Recommended "Track" mp3 gain change: -1
+Max PCM sample at current gain: 19516.424192
+Max mp3 global gain field: 216
+Min mp3 global gain field: 63
+Recommended "Album" dB change: -0.720000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 20089.176064
+Max Album mp3 global gain field: 242
+Min Album mp3 global gain field: 42
+
+
+Ummm... Right, this is just fucking weird.  So, we can see that it's NOT
+just the album gain being propagated to the track gain, since it's clearly
+an independent value.  Let's get rid of the -c switch just to be cautious.
+<identical gain output omitted>  From now on we will not use -c with these
+files.  Let's see if we can determine a relationship between the RTG (Real
+Track Gain), calculated with "mp3gain <file>", and the FTG (Fake Track Gain),
+calculated with "mp3gain -a <file>".
+
+vlinder% cp clean/test1.mp3 .; mp3gain test1.mp3; mp3gain -s c test1.mp3
+test1.mp3
+Recommended "Track" dB change: -6.200000         
+Recommended "Track" mp3 gain change: -4
+Max PCM sample at current gain: 40178.373563
+Max mp3 global gain field: 246
+Min mp3 global gain field: 46
+
+
+Recommended "Album" dB change for all files: -6.200000
+Recommended "Album" mp3 gain change for all files: -4
+test1.mp3
+Recommended "Track" dB change: -6.200000
+Recommended "Track" mp3 gain change: -4
+Max PCM sample at current gain: 40178.384896
+Max mp3 global gain field: 246
+Min mp3 global gain field: 46
+
+vlinder% cp clean/test1.mp3 .; mp3gain -a test1.mp3; mp3gain -s c test1.mp3
+test1.mp3
+Applying mp3 gain change of -4 to test1.mp3...   
+test1.mp3                                          
+Recommended "Track" dB change: -0.180000
+Recommended "Track" mp3 gain change: 0
+Max PCM sample at current gain: 20089.176064
+Max mp3 global gain field: 242
+Min mp3 global gain field: 42
+Recommended "Album" dB change: -0.180000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 20089.176064
+Max Album mp3 global gain field: 242
+Min Album mp3 global gain field: 42
+
+
+As we can see:
+  RTG = -6.2
+  FTG = -0.18
+
+So in this case:
+RTG = FTG - 6.02
+
+Let's try it for another track:
+
+vlinder% cp clean/test2.mp3 .; mp3gain test2.mp3; mp3gain -s c test2.mp3
+test2.mp3
+Recommended "Track" dB change: -7.060000         
+Recommended "Track" mp3 gain change: -5
+Max PCM sample at current gain: 39032.820265
+Max mp3 global gain field: 220
+Min mp3 global gain field: 67
+
+
+Recommended "Album" dB change for all files: -7.060000
+Recommended "Album" mp3 gain change for all files: -5
+test2.mp3
+Recommended "Track" dB change: -7.060000
+Recommended "Track" mp3 gain change: -5
+Max PCM sample at current gain: 39032.815616
+Max mp3 global gain field: 220
+Min mp3 global gain field: 67
+
+vlinder% cp clean/test2.mp3 .; mp3gain -a test2.mp3; mp3gain -s c test2.mp3
+test2.mp3
+Applying mp3 gain change of -5 to test2.mp3...   
+test2.mp3                                          
+Recommended "Track" dB change: 0.465000
+Recommended "Track" mp3 gain change: 0
+Max PCM sample at current gain: 16411.262976
+Max mp3 global gain field: 215
+Min mp3 global gain field: 62
+Recommended "Album" dB change: 0.465000
+Recommended "Album" mp3 gain change: 0
+Max Album PCM sample at current gain: 16411.262976
+Max Album mp3 global gain field: 215
+Min Album mp3 global gain field: 62
+
+So here:
+  RTG = -7.06
+  FTG = 0.465
+
+RTG = FTG - 7.525
+
+Sadly, it doesn't look like there's any easy/clear relation here.  Maybe a look
+at the mp3gain manpage will clear up this behaviour.
+
+Oh dear, here's the key passage:
+
+mp3gain actually changes your file's gain only when you use one of the options
+-r,  -a, -g, or -l. If none of these options is given, only a tag denoting the
+recommended gain change is written to the file. If you only want to print the
+recommended gain change (and not modify the file at all) you have to use the
+-s s (skip tag) option.
+
+
+So our original algorithm was founded on a misconception (unless Debian's
+mp3gain behaves differently).  We do not have to do a 2-step process to find
+the correct gain - we can use "mp3gain -s s <files>" and parse out the correct
+values.  ALTHOUGH note that the Album Peak is NOT given by this process by
+default, though it IS included in the output of "mp3gain -s s -o <files>"!
+
+The following process summarizes the findings:
+
+vlinder% cp clean/*.mp3 .     
+vlinder% md5sum *.mp3
+761f8de7c5bc0cbbb4b965241e896db0  test1.mp3
+c2bceed8a3a81735d84eced3597560ec  test2.mp3
+
+vlinder% mp3gain -s s -o *.mp3
+File	MP3 gain	dB gain	Max Amplitude	Max global_gain	Min global_gain
+test1.mp3       -4      -6.200000       40178.373563	246	46
+test2.mp3       -5      -7.060000       39032.820265	220	67
+"Album"	-4	-6.740000	40178.373563	246	46
+
+vlinder% md5sum *.mp3         
+761f8de7c5bc0cbbb4b965241e896db0  test1.mp3
+c2bceed8a3a81735d84eced3597560ec  test2.mp3
+
+The behaviour of -a now makes sense, since it's an analogue of -r, which writes
+only the tags necessary to offset the actual mp3gain APPLIED directly to the
+file.
+
+
