@@ -1,5 +1,8 @@
 #lang racket/base
 
+(require racket/sequence)
+
+
 ; These are second order level test utilities and do not themselves have tests
 
 (provide get-track-count-from-cd-toc
@@ -13,7 +16,7 @@
   14)
 
 (define (count-files-in-directory path)
-  14)
+  (length (directory-list path)))
 
 ; remove extension from path and return a path
 (define (basename path)
