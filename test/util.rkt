@@ -40,7 +40,9 @@
       (= exit-code 0)))))
 
 (define (get-wav-duration path)
-  #f)
+  (match (system-with-output-and-exit-code (format "soxi -D ~a" path))
+    ((list output exit-code)
+     (string->number (string-trim output)))))
 
 (define (get-track-durations-from-cd-toc)
   '())
