@@ -40,7 +40,7 @@
 
 (test-case
  "Track times match CD TOC"
- (let ((normalize-second (compose round second->sector)))
+ (let ((normalize-second (compose round util:second->sector)))
    (check-equal? 
     (sequence->list
      (sequence-map (compose normalize-second
