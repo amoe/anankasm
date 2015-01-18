@@ -24,7 +24,7 @@
  "Tracks are named sequentially"
  ; Sort directory list, generate integer sequence, iterate in parallel,
  ; terminate on every.
- (rip)
+ (rip unique-id)
  (let ((expected-list (build-list (util:get-track-count-from-cd-toc)
 				  add1)))
    (check-true (andmap (lambda (path n)
@@ -35,11 +35,12 @@
 
 (test-case
  "Tracks are in valid WAV format"
- (rip)
+ (rip unique-id)
  (sequence-andmap util:valid-wav? (in-directory expected-output-path)))
 
 (test-case
  "Track times match CD TOC"
+ (rip unique-id)
  (let ((normalize-second (compose round util:second->sector)))
    (check-equal? 
     (sequence->list

@@ -15,6 +15,6 @@
 ; The tracks should have the correct names.
 ; The tracks should be in WAV format.
 ; The track times should match the timestamp specified by the CD TOC.
-(define (rip)
+(define (rip unique-id)
   #f)
 				
