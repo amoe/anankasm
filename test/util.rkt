@@ -16,7 +16,8 @@
 	 basename
 	 valid-wav?
 	 get-wav-duration
-	 get-track-durations-from-cd-toc)
+	 get-track-durations-from-cd-toc
+	 second->sector)
 
 (define (get-track-count-from-cd-toc)
   ; Call cdparanoia and break the output into lines and grep it.
@@ -81,3 +82,6 @@
 
 (define (sector->second n)
   (/ n 75))
+
+(define (second->sector n)
+  (* n 75))

@@ -40,7 +40,11 @@
 
 (test-case
  "Track times match CD TOC"
- (check-equal? (sequence-map util:get-wav-duration
-			     (in-directory expected-output-path))
-	       (util:get-track-durations-from-cd-toc)))
+ (let ((normalize-second (compose round second->sector)))
+   (check-equal? 
+    (sequence->list
+     (sequence-map (compose normalize-second
+			    util:get-wav-duration)
+		   (in-directory expected-output-path)))
+    (map normalize-second util:get-track-durations-from-cd-toc))))
   
