@@ -1,5 +1,7 @@
 #lang racket/base
 
+; These are second order level test utilities and do not themselves have tests
+
 (provide get-track-count-from-cd-toc
 	 count-files-in-directory
 	 basename
@@ -13,8 +15,14 @@
 (define (count-files-in-directory path)
   14)
 
+; remove extension from path and return a path
 (define (basename path)
-  "FOO")
+  (file-name-from-path
+   (string-trim path
+		(string-append "."
+			       (bytes->string/locale
+				(filename-extension path)))
+		#:left? #f)))
 
 (define (valid-wav? path)
   #t)
