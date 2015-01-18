@@ -22,9 +22,7 @@
   ; Call cdparanoia and break the output into lines and grep it.
   (match (system-with-output-and-exit-code (format "cdparanoia -Q 2>&1"))
     ((list output exit-code)
-     (count (lambda (line)
-	      (regexp-match? #px"^\\s*\\d+\\." line))
-	    (string-split output (string #\newline))))))
+     (count is-track-line? (string-split output (string #\newline))))))
 
 (define (count-files-in-directory path)
   (length (directory-list path)))
@@ -51,7 +49,16 @@
      (string->number (string-trim output)))))
 
 (define (get-track-durations-from-cd-toc)
-  '())
+  (map sector->second
+       (match (system-with-output-and-exit-code (format "cdparanoia -Q 2>&1"))
+	 ((list output exit-code)
+	  (map
+	   (lambda (line)
+	     (match (regexp-match #px"\\s*\\d+\\.\\s*(\\d+) .*" line)
+	       ((list full sector-duration)
+		(string->number sector-duration))))
+	   (filter is-track-line?
+		   (string-split output (string #\newline))))))))
 
 (define (system-with-output-and-exit-code str)
     (match (process str)
@@ -67,3 +74,10 @@
        (close-input-port standard-output)
        (list output (control 'exit-code))))))
 
+
+(define (is-track-line? line)
+  (regexp-match? #px"^\\s*\\d+\\." line))
+
+
+(define (sector->second n)
+  (/ n 75))
