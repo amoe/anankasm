@@ -1,6 +1,11 @@
 #lang racket/base
 
-(require racket/sequence)
+(require racket/sequence
+	 racket/path
+	 racket/string
+	 racket/system
+	 racket/port
+	 racket/match)
 
 
 ; These are second order level test utilities and do not themselves have tests
@@ -28,10 +33,29 @@
 		#:left? #f)))
 
 (define (valid-wav? path)
-  #t)
+  (match (system-with-output-and-exit-code (format "soxi -t ~a" path))
+    ((list output exit-code)
+     (and
+      (string=? (string-trim output) "wav")
+      (= exit-code 0)))))
 
 (define (get-wav-duration path)
   #f)
 
 (define (get-track-durations-from-cd-toc)
   '())
+
+(define (system-with-output-and-exit-code str)
+    (match (process str)
+    ((list standard-output
+	   standard-input
+	   pid
+	   standard-error
+	   control)
+     (close-output-port standard-input)
+     (close-input-port standard-error)
+     (control 'wait)
+     (let ((output (port->string standard-output)))
+       (close-input-port standard-output)
+       (list output (control 'exit-code))))))
+
