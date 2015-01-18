@@ -5,7 +5,8 @@
 	 racket/string
 	 racket/system
 	 racket/port
-	 racket/match)
+	 racket/match
+	 racket/list)
 
 
 ; These are second order level test utilities and do not themselves have tests
@@ -18,7 +19,12 @@
 	 get-track-durations-from-cd-toc)
 
 (define (get-track-count-from-cd-toc)
-  14)
+  ; Call cdparanoia and break the output into lines and grep it.
+  (match (system-with-output-and-exit-code (format "cdparanoia -Q 2>&1"))
+    ((list output exit-code)
+     (count (lambda (line)
+	      (regexp-match? #px"^\\s*\\d+\\." line))
+	    (string-split output (string #\newline))))))
 
 (define (count-files-in-directory path)
   (length (directory-list path)))
