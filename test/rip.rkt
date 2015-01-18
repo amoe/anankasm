@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require rackunit
+	 racket/sequence
 	 "../rip.rkt"
 	 (prefix-in util: "util.rkt"))
 
@@ -20,18 +21,26 @@
 		 track-count)))
 
 (test-case
- "Directory name uses unique value"
- (fail))
-
-(test-case
  "Tracks are named sequentially"
- (fail))
+ ; Sort directory list, generate integer sequence, iterate in parallel,
+ ; terminate on every.
+ (rip)
+ (let ((expected-list (build-list (util:get-track-count-from-cd-toc)
+				  add1)))
+   (check-true (andmap (lambda (path n)
+			 (= (util:basename path) n))
+		       (sort (directory-list expected-output-path) path<?)
+		       expected-list))))
 
 
 (test-case
  "Tracks are in valid WAV format"
- (fail))
+ (rip)
+ (sequence-andmap util:valid-wav? (in-directory expected-output-path)))
 
 (test-case
  "Track times match CD TOC"
- (fail))
+ (check-equal? (sequence-map util:get-wav-duration
+			     (in-directory expected-output-path))
+	       (util:get-track-durations-from-cd-toc)))
+  
