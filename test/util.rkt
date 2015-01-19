@@ -12,7 +12,7 @@
 ; These are second order level test utilities and do not themselves have tests
 
 (provide get-track-count-from-cd-toc
-	 count-files-in-directory
+	 get-wavs-in-directory
 	 basename
 	 valid-wav?
 	 get-wav-duration
@@ -23,19 +23,23 @@
   ; Call cdparanoia and break the output into lines and grep it.
   (match (system-with-output-and-exit-code (format "cdparanoia -Q 2>&1"))
     ((list output exit-code)
+     (when (not (zero? exit-code))
+       (error 'get-track-count-from-cd-toc
+	      "subprocess failed: ~s" output))
      (count is-track-line? (string-split output (string #\newline))))))
 
-(define (count-files-in-directory path)
-  (length (directory-list path)))
+(define (get-wavs-in-directory path)
+  (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
 
 ; remove extension from path and return a path
 (define (basename path)
-  (file-name-from-path
-   (string-trim path
-		(string-append "."
-			       (bytes->string/locale
-				(filename-extension path)))
-		#:left? #f)))
+  (path->string
+   (file-name-from-path
+    (string-trim (path->string path)
+		 (string-append "."
+				(bytes->string/locale
+				 (filename-extension path)))
+		 #:left? #f))))
 
 (define (valid-wav? path)
   (match (system-with-output-and-exit-code (format "soxi -t ~a" path))
@@ -47,12 +51,20 @@
 (define (get-wav-duration path)
   (match (system-with-output-and-exit-code (format "soxi -D ~a" path))
     ((list output exit-code)
+     (when (not (zero? exit-code))
+       (error 'get-wav-duration
+	      "subprocess failed: ~a" path))
+
      (string->number (string-trim output)))))
 
 (define (get-track-durations-from-cd-toc)
   (map sector->second
        (match (system-with-output-and-exit-code (format "cdparanoia -Q 2>&1"))
 	 ((list output exit-code)
+	  (when (not (zero? exit-code))
+	    (error 'get-track-durations-from-cd-toc
+		   "subprocess failed: ~s" output))
+	  
 	  (map
 	   (lambda (line)
 	     (match (regexp-match #px"\\s*\\d+\\.\\s*(\\d+) .*" line)
@@ -85,3 +97,6 @@
 
 (define (second->sector n)
   (* n 75))
+
+(define (is-wav? path)
+  (bytes=? (filename-extension path) #"wav"))
