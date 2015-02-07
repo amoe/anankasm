@@ -26,12 +26,13 @@
 				; This is kind of dumb as we unnecessarily
 				; remove and cat back on the extension.
 				(format "~a.wav" (basename path)))))
-     (sequence->list (in-directory input-directory))))
+     (filter is-wav? (sequence->list (in-directory input-directory)))))
 
 (define (fix-wave input-path output-path)
   (let ((result (system/exit-code
 		 (format "sox -G ~a -r 44100 -c 2 -e signed-integer -b 16 ~a"
-			 input-path output-path))))
+			 (shell-quote (path->string input-path))
+			 (shell-quote (path->string output-path))))))
     (when (not (zero? result))
       (error 'fix-wave "conversion subprocess failed with code ~a" result))))
 
@@ -44,8 +45,11 @@
      (sequence->list (in-directory input-directory))))
 
 (define (flacize-single-file input-file output-file)
-  (let ((result (system/exit-code
-		 (format "flac --best -o ~a ~a" output-file input-file))))
-    (when (not (zero? result))
-      (error 'fix-wave "encode subprocess failed with code ~a" result))))
+  (let ((command (format "flac --best -o ~a ~a"
+			 (shell-quote (path->string output-file))
+			 (shell-quote (path->string input-file)))))
+
+    (let ((result (system/exit-code command)))
+      (when (not (zero? result))
+	(error 'fix-wave "encode subprocess ~a failed with code ~a" command result)))))
 

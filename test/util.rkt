@@ -137,8 +137,3 @@
 (define (second->sector n)
   (* n 75))
 
-(define (is-wav? path)
-  (bytes=? (filename-extension path) #"wav"))
-
-(define (is-flac? path)
-  (bytes=? (filename-extension path) #"flac"))
