@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/system)
+(require racket/format)
 
 (provide rip)
 
@@ -16,9 +17,8 @@
 ; The tracks should be in WAV format.
 ; The track times should match the timestamp specified by the CD TOC.
 (define (rip unique-id)
-  (let ((full-path (build-path "/home/amoe/.anankasm/rip" unique-id)))
+  (let ((full-path (build-path "/home/amoe/.anankasm/rip" (~a unique-id))))
     (let ((full-command (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)))
       (system/exit-code full-command))))
       
 			      
-				

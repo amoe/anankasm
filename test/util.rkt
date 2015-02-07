@@ -8,16 +8,35 @@
 	 racket/match
 	 racket/list)
 
-
 ; These are second order level test utilities and do not themselves have tests
 
 (provide get-track-count-from-cd-toc
+	 find-bit-rate
+	 find-sample-rate
+	 is-valid-flac?
+	 get-flacs-in-directory
 	 get-wavs-in-directory
 	 basename
 	 valid-wav?
 	 get-wav-duration
 	 get-track-durations-from-cd-toc
-	 second->sector)
+	 second->sector
+	 generate-tones)
+
+(define (generate-tones number
+			#:sample-rate (sample-rate 44100)
+			#:bit-rate (bit-rate 16))
+  #t)
+
+(define (is-valid-flac? file)
+  #t)
+
+(define (find-bit-rate file)
+  #t)
+
+(define (find-sample-rate file)
+  #t)
+
 
 (define (get-track-count-from-cd-toc)
   ; Call cdparanoia and break the output into lines and grep it.
@@ -27,6 +46,9 @@
        (error 'get-track-count-from-cd-toc
 	      "subprocess failed: ~s" output))
      (count is-track-line? (string-split output (string #\newline))))))
+
+(define (get-flacs-in-directory path)
+  (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
 
 (define (get-wavs-in-directory path)
   (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
@@ -99,4 +121,7 @@
   (* n 75))
 
 (define (is-wav? path)
+  (bytes=? (filename-extension path) #"wav"))
+
+(define (is-flac? path)
   (bytes=? (filename-extension path) #"wav"))
