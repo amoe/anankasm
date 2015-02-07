@@ -8,6 +8,19 @@
 
 (provide encode)
 
+(struct encode-format (name encode-command extension))
+
+(define formats
+  (list
+   (encode-format 'flac "flac --best -o ~a ~a" "flac")
+   (encode-format 'ogg "oggenc -q 4 -o ~a ~a" "ogg")))
+
+(define (find-encoder name)
+  (findf (lambda (fmt) (eq? (encode-format-name fmt) name))
+	 formats))
+
+(define default-encode-format (find-encoder 'ogg))
+
 ; Expect a path representing a directory containing WAV files.
 ; Encodes all files to FLAC.
 ; Will also fix files that need to be downsampled.
@@ -40,16 +53,18 @@
   (for-each
    (lambda (path)
      (flacize-single-file path (build-path output-directory
-				(format "~a.flac"
-					(basename path)))))
+				(format "~a.~a"
+					(basename path)
+					(encode-format-extension default-encode-format)))))
      (sequence->list (in-directory input-directory))))
 
 (define (flacize-single-file input-file output-file)
-  (let ((command (format "flac --best -o ~a ~a"
+  (let ((command (format (encode-format-encode-command default-encode-format)
 			 (shell-quote (path->string output-file))
 			 (shell-quote (path->string input-file)))))
 
     (let ((result (system/exit-code command)))
       (when (not (zero? result))
-	(error 'fix-wave "encode subprocess ~a failed with code ~a" command result)))))
+	(error 'fix-wave "encode subprocess ~a failed with code ~a"
+	       command result)))))
 
