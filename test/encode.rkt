@@ -16,37 +16,45 @@
    "FLAC files appear in directory with correct names"
    (define number-tracks 2)
    
-   (util:generate-tones number-tracks)
+   (util:generate-tones number-tracks input-directory)
    (encode input-directory output-directory)
 
    ; check the ordering
-   (let ((expected-list (build-list number-tracks add1)))
+   (let ((expected-list (build-list number-tracks add1))
+	 (flacs (util:get-flacs-in-directory output-directory)))
+     (check-equal? (length flacs) number-tracks)
      (check-true (andmap (lambda (path n)
 			   (= (string->number (util:basename path))
 			      n))
-			 (util:get-flacs-in-directory output-directory)
+			 flacs
 			 expected-list))))
 
 
   (test-case
    "Files are in a valid FLAC format"
-   (util:generate-tones 1)
+   (util:generate-tones 1 input-directory)
    (encode input-directory output-directory)
-   (check-true
-    (sequence-andmap util:is-valid-flac? (in-directory output-directory))))
+   (let ((flacs (util:get-flacs-in-directory output-directory)))
+     (check-equal? (length flacs) 1)
+     (check-true
+      (andmap util:is-valid-flac? flacs))))
    
   (test-case
    "Files are dithered down from 24-bit"
-   (util:generate-tones 1 #:bit-rate 24)
+   (util:generate-tones 1 input-directory #:bit-rate 24)
    (encode input-directory output-directory)
-   (let ((output-file (first (util:get-flacs-in-directory output-directory))))
-     (check-equal? (util:find-bit-rate output-file) 16)))
+
+   (let ((flacs (util:get-flacs-in-directory output-directory)))
+     (check-equal? (length flacs) 1)
+     (check-equal? (util:find-bit-rate (first flacs)) 16)))
+
   
   (test-case
    "Files are downsampled from 48KHz"
-   (util:generate-tones 1 #:sample-rate 48000)
+   (util:generate-tones 1 input-directory #:sample-rate 48000)
    (encode input-directory output-directory)
-   (let ((output-file (first (util:get-flacs-in-directory output-directory))))
-     (check-equal? (util:find-sample-rate output-file) 44100))))
+   (let ((flacs (util:get-flacs-in-directory output-directory)))
+     (check-equal? (length flacs) 1)
+     (check-equal? (util:find-sample-rate (first flacs)) 44100))))
    
 (run-tests anankasm/encode)

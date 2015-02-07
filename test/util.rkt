@@ -24,18 +24,43 @@
 	 generate-tones)
 
 (define (generate-tones number
+			output-directory
 			#:sample-rate (sample-rate 44100)
 			#:bit-rate (bit-rate 16))
-  #t)
+  (for-each (lambda (path)
+	      (generate-tone path sample-rate bit-rate))
+	    (map (lambda (n)
+		   (build-path output-directory (format "~a.wav" n)))
+		 (build-list number add1))))
+  
+
+(define (generate-tone output-path sample-rate bit-rate)
+ (checked-system (format "sox -n -r ~a -b ~a ~a synth 5 sin 440"
+			 sample-rate
+			 bit-rate
+			 output-path)))
 
 (define (is-valid-flac? file)
-  #t)
+  (match (system-with-output-and-exit-code (format "flac -t ~a" file))
+    ((list output exit-code)
+      (= exit-code 0))))
 
 (define (find-bit-rate file)
-  #t)
+ (string->number (checked-system (format "soxi -b ~a" file))))
 
 (define (find-sample-rate file)
-  #t)
+ (string->number (checked-system (format "soxi -r ~a" file))))
+
+(define (checked-system shell-fragment)
+  (match (system-with-output-and-exit-code shell-fragment)
+    ((list output exit-code)
+     (when (not (zero? exit-code))
+       (error 'checked-system
+	      "subprocess ~s failed with code ~a: ~s"
+	      shell-fragment
+	      exit-code
+	      output))
+     (string-trim output "\n" #:left? #f))))
 
 
 (define (get-track-count-from-cd-toc)
@@ -103,6 +128,7 @@
 	   standard-error
 	   control)
      (close-output-port standard-input)
+     (port->string standard-error)
      (close-input-port standard-error)
      (control 'wait)
      (let ((output (port->string standard-output)))
