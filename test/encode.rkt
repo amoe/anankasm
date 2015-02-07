@@ -8,12 +8,14 @@
 	 "../encode.rkt"
 	 (prefix-in util: "util.rkt"))
 
-(define input-directory (make-temporary-file "encoder-input-~a" 'directory))
-(define output-directory (make-temporary-file "encoder-output-~a" 'directory))
 
 (define-test-suite anankasm/encode
   (test-case
    "FLAC files appear in directory with correct names"
+   (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
+   (define output-directory
+     (make-temporary-file "encoder-output-~a" 'directory))
+
    (define number-tracks 2)
    
    (util:generate-tones number-tracks input-directory)
@@ -32,6 +34,9 @@
 
   (test-case
    "Files are in a valid FLAC format"
+   (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
+   (define output-directory
+     (make-temporary-file "encoder-output-~a" 'directory))
    (util:generate-tones 1 input-directory)
    (encode input-directory output-directory)
    (let ((flacs (util:get-flacs-in-directory output-directory)))
@@ -41,6 +46,10 @@
    
   (test-case
    "Files are dithered down from 24-bit"
+   (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
+   (define output-directory
+     (make-temporary-file "encoder-output-~a" 'directory))
+   
    (util:generate-tones 1 input-directory #:bit-rate 24)
    (encode input-directory output-directory)
 
@@ -51,6 +60,10 @@
   
   (test-case
    "Files are downsampled from 48KHz"
+   (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
+   (define output-directory
+     (make-temporary-file "encoder-output-~a" 'directory))
+   
    (util:generate-tones 1 input-directory #:sample-rate 48000)
    (encode input-directory output-directory)
    (let ((flacs (util:get-flacs-in-directory output-directory)))

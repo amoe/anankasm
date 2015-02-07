@@ -6,7 +6,8 @@
 	 racket/system
 	 racket/port
 	 racket/match
-	 racket/list)
+	 racket/list
+	 "../util.rkt")
 
 ; These are second order level test utilities and do not themselves have tests
 
@@ -73,20 +74,10 @@
      (count is-track-line? (string-split output (string #\newline))))))
 
 (define (get-flacs-in-directory path)
-  (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
+  (sort (sequence->list (sequence-filter is-flac? (in-directory path))) path<?))
 
 (define (get-wavs-in-directory path)
   (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
-
-; remove extension from path and return a path
-(define (basename path)
-  (path->string
-   (file-name-from-path
-    (string-trim (path->string path)
-		 (string-append "."
-				(bytes->string/locale
-				 (filename-extension path)))
-		 #:left? #f))))
 
 (define (valid-wav? path)
   (match (system-with-output-and-exit-code (format "soxi -t ~a" path))
@@ -150,4 +141,4 @@
   (bytes=? (filename-extension path) #"wav"))
 
 (define (is-flac? path)
-  (bytes=? (filename-extension path) #"wav"))
+  (bytes=? (filename-extension path) #"flac"))
