@@ -15,12 +15,11 @@
 	 find-bit-rate
 	 find-sample-rate
 	 is-valid-flac?
-	 get-flacs-in-directory
-	 get-wavs-in-directory
 	 basename
 	 valid-wav?
 	 get-wav-duration
 	 get-track-durations-from-cd-toc
+	 get-file-type-in-directory
 	 second->sector
 	 generate-tones)
 
@@ -73,11 +72,10 @@
 	      "subprocess failed: ~s" output))
      (count is-track-line? (string-split output (string #\newline))))))
 
-(define (get-flacs-in-directory path)
-  (sort (sequence->list (sequence-filter is-flac? (in-directory path))) path<?))
-
-(define (get-wavs-in-directory path)
-  (sort (sequence->list (sequence-filter is-wav? (in-directory path))) path<?))
+(define (get-file-type-in-directory path is-extension?)
+  (sort
+   (sequence->list 
+    (sequence-filter is-extension? (in-directory path))) path<?))
 
 (define (valid-wav? path)
   (match (system-with-output-and-exit-code (format "soxi -t ~a" path))

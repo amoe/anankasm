@@ -6,7 +6,9 @@
 
 (require "util.rkt")
 
-(provide encode)
+(provide encode
+	 (struct-out encode-format)
+	 default-encode-format)
 
 (struct encode-format (name encode-command extension))
 
@@ -39,7 +41,8 @@
 				; This is kind of dumb as we unnecessarily
 				; remove and cat back on the extension.
 				(format "~a.wav" (basename path)))))
-     (filter is-wav? (sequence->list (in-directory input-directory)))))
+     (filter (make-extension-filter "wav")
+	     (sequence->list (in-directory input-directory)))))
 
 (define (fix-wave input-path output-path)
   (let ((result (system/exit-code

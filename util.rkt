@@ -2,8 +2,8 @@
 
 (provide basename
 	 shell-quote
-	 is-wav?
-	 is-flac?)
+	 make-extension-filter)
+
 
 ; remove extension from path and return a path
 (define (basename path)
@@ -30,9 +30,7 @@
   (regexp-replace*
     meta-re s (lambda args (string-append "\\" (first args)))))
 
-
-(define (is-wav? path)
-  (bytes=? (filename-extension path) #"wav"))
-
-(define (is-flac? path)
-  (bytes=? (filename-extension path) #"flac"))
+(define (make-extension-filter extension)
+  (let ((extension-as-bytes (string->bytes/utf-8 extension)))
+    (lambda (path)
+      (bytes=? (filename-extension path) extension-as-bytes))))

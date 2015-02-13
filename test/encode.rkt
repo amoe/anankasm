@@ -6,7 +6,13 @@
 	 racket/file
 	 racket/list
 	 "../encode.rkt"
+	 "../util.rkt"
 	 (prefix-in util: "util.rkt"))
+
+(define (get-encoded path)
+  (let ((extension (encode-format-extension default-encode-format)))
+    (util:get-file-type-in-directory path
+				     (make-extension-filter extension))))
 
 
 (define-test-suite anankasm/encode
@@ -23,7 +29,7 @@
 
    ; check the ordering
    (let ((expected-list (build-list number-tracks add1))
-	 (flacs (util:get-flacs-in-directory output-directory)))
+	 (flacs (get-encoded output-directory)))
      (check-equal? (length flacs) number-tracks)
      (check-true (andmap (lambda (path n)
 			   (= (string->number (util:basename path))
@@ -39,7 +45,7 @@
      (make-temporary-file "encoder-output-~a" 'directory))
    (util:generate-tones 1 input-directory)
    (encode input-directory output-directory)
-   (let ((flacs (util:get-flacs-in-directory output-directory)))
+   (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
      (check-true
       (andmap util:is-valid-flac? flacs))))
@@ -53,8 +59,9 @@
    (util:generate-tones 1 input-directory #:bit-rate 24)
    (encode input-directory output-directory)
 
-   (let ((flacs (util:get-flacs-in-directory output-directory)))
+   (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
+     (printf "~s\n" (first flacs))
      (check-equal? (util:find-bit-rate (first flacs)) 16)))
 
   
@@ -66,7 +73,7 @@
    
    (util:generate-tones 1 input-directory #:sample-rate 48000)
    (encode input-directory output-directory)
-   (let ((flacs (util:get-flacs-in-directory output-directory)))
+   (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
      (check-equal? (util:find-sample-rate (first flacs)) 44100))))
    
