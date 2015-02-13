@@ -14,7 +14,7 @@
 (provide get-track-count-from-cd-toc
 	 find-bit-rate
 	 find-sample-rate
-	 is-valid-flac?
+	 is-valid-encode?
 	 basename
 	 valid-wav?
 	 get-wav-duration
@@ -40,10 +40,21 @@
 			 bit-rate
 			 output-path)))
 
-(define (is-valid-flac? file)
-  (match (system-with-output-and-exit-code (format "flac -t ~a" file))
+(define (choose-test-command format-id)
+  (case format-id
+    ((ogg) "oggdec -o /dev/null ~a")
+    ((flac) "flac -t ~a")
+    (else
+     (error 'choose-test-command "cannot test unknown format" format-id))))
+
+(define (is-valid-encode? file format-id)
+  (printf "~s\n" file)
+  (printf "~s\n" format-id)
+
+  (match (system-with-output-and-exit-code (format (choose-test-command 
+						    format-id) file))
     ((list output exit-code)
-      (= exit-code 0))))
+     (= exit-code 0))))
 
 (define (find-bit-rate file)
  (string->number (checked-system (format "soxi -b ~a" file))))

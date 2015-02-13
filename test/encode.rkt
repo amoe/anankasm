@@ -10,7 +10,7 @@
 	 (prefix-in util: "util.rkt"))
 
 (define (get-encoded path)
-  (let ((extension (encode-format-extension default-encode-format)))
+  (let ((extension (encode-format-extension (default-encode-format))))
     (util:get-file-type-in-directory path
 				     (make-extension-filter extension))))
 
@@ -48,21 +48,28 @@
    (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
      (check-true
-      (andmap util:is-valid-flac? flacs))))
+      (andmap (lambda (path) (util:is-valid-encode? path
+						    (encode-format-name 
+						     (default-encode-format))))
+	      flacs))))
    
   (test-case
    "Files are dithered down from 24-bit"
-   (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
-   (define output-directory
-     (make-temporary-file "encoder-output-~a" 'directory))
-   
-   (util:generate-tones 1 input-directory #:bit-rate 24)
-   (encode input-directory output-directory)
+   ; Parameterize this test to FLAC, as lossy formats don't know about
+   ; bit depth.
+   (parameterize ((default-encode-format (find-encoder 'flac)))
+     (define input-directory
+       (make-temporary-file "encoder-input-~a" 'directory))
+     (define output-directory
+       (make-temporary-file "encoder-output-~a" 'directory))
+     
+     (util:generate-tones 1 input-directory #:bit-rate 24)
+     (encode input-directory output-directory)
 
-   (let ((flacs (get-encoded output-directory)))
-     (check-equal? (length flacs) 1)
-     (printf "~s\n" (first flacs))
-     (check-equal? (util:find-bit-rate (first flacs)) 16)))
+     (let ((flacs (get-encoded output-directory)))
+       (check-equal? (length flacs) 1)
+       (printf "~s\n" (first flacs))
+       (check-equal? (util:find-bit-rate (first flacs)) 16))))
 
   
   (test-case

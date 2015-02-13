@@ -8,7 +8,8 @@
 
 (provide encode
 	 (struct-out encode-format)
-	 default-encode-format)
+	 default-encode-format
+	 find-encoder)
 
 (struct encode-format (name encode-command extension))
 
@@ -21,7 +22,7 @@
   (findf (lambda (fmt) (eq? (encode-format-name fmt) name))
 	 formats))
 
-(define default-encode-format (find-encoder 'ogg))
+(define default-encode-format (make-parameter (find-encoder 'ogg)))
 
 ; Expect a path representing a directory containing WAV files.
 ; Encodes all files to FLAC.
@@ -58,11 +59,11 @@
      (flacize-single-file path (build-path output-directory
 				(format "~a.~a"
 					(basename path)
-					(encode-format-extension default-encode-format)))))
+					(encode-format-extension (default-encode-format))))))
      (sequence->list (in-directory input-directory))))
 
 (define (flacize-single-file input-file output-file)
-  (let ((command (format (encode-format-encode-command default-encode-format)
+  (let ((command (format (encode-format-encode-command (default-encode-format))
 			 (shell-quote (path->string output-file))
 			 (shell-quote (path->string input-file)))))
 
