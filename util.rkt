@@ -2,7 +2,11 @@
 
 (provide basename
 	 shell-quote
-	 make-extension-filter)
+	 make-extension-filter
+         delete-directory/recursive)
+
+(define (delete-directory/recursive path)
+  #t)
 
 
 ; remove extension from path and return a path
