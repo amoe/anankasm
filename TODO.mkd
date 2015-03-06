@@ -1,3 +1,6 @@
+
+* Check that ripped track number is accurate, under output.
+
 If a move would result in moving to an existing directory, it can't be
 performed.
 
