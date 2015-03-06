@@ -7,7 +7,7 @@
 	 racket/port
 	 racket/match
 	 racket/list
-	 "../util.rkt")
+	 "util.rkt")
 
 ; These are second order level test utilities and do not themselves have tests
 

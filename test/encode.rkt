@@ -7,11 +7,11 @@
 	 racket/list
 	 "../encode.rkt"
 	 "../util.rkt"
-	 (prefix-in util: "util.rkt"))
+	 (prefix-in test-util: "../test-utility.rkt"))
 
 (define (get-encoded path)
   (let ((extension (encode-format-extension (default-encode-format))))
-    (util:get-file-type-in-directory path
+    (test-util:get-file-type-in-directory path
 				     (make-extension-filter extension))))
 
 
@@ -24,7 +24,7 @@
 
    (define number-tracks 2)
    
-   (util:generate-tones number-tracks input-directory)
+   (test-util:generate-tones number-tracks input-directory)
    (encode input-directory output-directory)
 
    ; check the ordering
@@ -32,7 +32,7 @@
 	 (flacs (get-encoded output-directory)))
      (check-equal? (length flacs) number-tracks)
      (check-true (andmap (lambda (path n)
-			   (= (string->number (util:basename path))
+			   (= (string->number (test-util:basename path))
 			      n))
 			 flacs
 			 expected-list))))
@@ -43,12 +43,12 @@
    (define input-directory (make-temporary-file "encoder-input-~a" 'directory))
    (define output-directory
      (make-temporary-file "encoder-output-~a" 'directory))
-   (util:generate-tones 1 input-directory)
+   (test-util:generate-tones 1 input-directory)
    (encode input-directory output-directory)
    (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
      (check-true
-      (andmap (lambda (path) (util:is-valid-encode? path
+      (andmap (lambda (path) (test-util:is-valid-encode? path
 						    (encode-format-name 
 						     (default-encode-format))))
 	      flacs))))
@@ -63,13 +63,13 @@
      (define output-directory
        (make-temporary-file "encoder-output-~a" 'directory))
      
-     (util:generate-tones 1 input-directory #:bit-rate 24)
+     (test-util:generate-tones 1 input-directory #:bit-rate 24)
      (encode input-directory output-directory)
 
      (let ((flacs (get-encoded output-directory)))
        (check-equal? (length flacs) 1)
        (printf "~s\n" (first flacs))
-       (check-equal? (util:find-bit-rate (first flacs)) 16))))
+       (check-equal? (test-util:find-bit-rate (first flacs)) 16))))
 
   
   (test-case
@@ -78,10 +78,10 @@
    (define output-directory
      (make-temporary-file "encoder-output-~a" 'directory))
    
-   (util:generate-tones 1 input-directory #:sample-rate 48000)
+   (test-util:generate-tones 1 input-directory #:sample-rate 48000)
    (encode input-directory output-directory)
    (let ((flacs (get-encoded output-directory)))
      (check-equal? (length flacs) 1)
-     (check-equal? (util:find-sample-rate (first flacs)) 44100))))
+     (check-equal? (test-util:find-sample-rate (first flacs)) 44100))))
    
 (run-tests anankasm/encode)

@@ -4,7 +4,8 @@
 	 rackunit/text-ui
 	 racket/sequence
 	 "../rip.rkt"
-	 (prefix-in util: "util.rkt"))
+         "../util.rkt"
+	 (prefix-in test-util: "../test-utility.rkt"))
 
 ; We could use CDemu to test.
 
@@ -14,6 +15,8 @@
 (define (set-up)
   (rip unique-id))
 
+(define (get-wavs-in-directory directory)
+  (test-util:get-file-type-in-directory directory (make-extension-filter "wav")))
 
 (define (tear-down)
   (display "Cleaning up\n"))
@@ -25,35 +28,35 @@
 
   (test-case
    "Track count matches TOC"
-   (let ((track-count (util:get-track-count-from-cd-toc)))
-     (check-equal? (length (util:get-wavs-in-directory expected-output-path))
+   (let ((track-count (test-util:get-track-count-from-cd-toc)))
+     (check-equal? (length (get-wavs-in-directory expected-output-path))
 		   track-count)))
 
   (test-case
    "Tracks are named sequentially"
    ; Sort directory list, generate integer sequence, iterate in parallel,
    ; terminate on every.
-   (let ((expected-list (build-list (util:get-track-count-from-cd-toc)
+   (let ((expected-list (build-list (test-util:get-track-count-from-cd-toc)
 				    add1)))
      (check-true (andmap (lambda (path n)
-			   (= (string->number (util:basename path))
+			   (= (string->number (test-util:basename path))
 			      n))
-			 (util:get-wavs-in-directory expected-output-path)
+			 (get-wavs-in-directory expected-output-path)
 			 expected-list))))
 
 
   (test-case
    "Tracks are in valid WAV format"
-   (sequence-andmap util:valid-wav? (in-directory expected-output-path)))
+   (sequence-andmap test-util:valid-wav? (in-directory expected-output-path)))
 
   (test-case
    "Track times match CD TOC"
-   (let ((normalize-second (compose inexact->exact round util:second->sector)))
+   (let ((normalize-second (compose inexact->exact round test-util:second->sector)))
      (check-equal? 
       (map (compose normalize-second
-		    util:get-wav-duration)
-	   (util:get-wavs-in-directory expected-output-path))
-      (map normalize-second (util:get-track-durations-from-cd-toc))))))
+		    test-util:get-wav-duration)
+	   (get-wavs-in-directory expected-output-path))
+      (map normalize-second (test-util:get-track-durations-from-cd-toc))))))
 
 
 (run-tests anankasm/rip)
