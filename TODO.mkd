@@ -10,6 +10,8 @@ Note that MP3s that are silent in rhythmbox are the same ones that have correct 
 
 WISHLIST
 
+- Rip procedure should throw error on a nonzero exit code.
+- Should create .anankasm directory when running
 - Migrate to python-rgain for MP3gain support
 - Ogg support
 - M3U playlist creator

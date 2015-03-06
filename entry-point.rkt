@@ -1,10 +1,12 @@
 #lang racket
 
+(require "rip.rkt")
 (require "encode.rkt")
 
 (match (current-command-line-arguments)
-  ((vector input output)
-   (encode input output)) 
+  ((vector output)
+   (rip "FOOBAR")
+   (encode "/home/amoe/.anankasm/rip/FOOBAR" output))
   (else
    (error 'something "die")))
    
