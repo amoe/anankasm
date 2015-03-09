@@ -25,12 +25,18 @@
         (ogg? (lambda (s)
                 (bytes=? (filename-extension s) #"ogg"))))
     (cond
-      ((andmap mp3? files)  (replaygain/mp3 files))
-      ((andmap ogg? files)  (replaygain/ogg files))
+      ((andmap mp3? files)  (replaygain/all files))
+      ((andmap ogg? files)  (replaygain/all files))
       (else
         (error
           'replaygain
           "cannot apply replaygain to heterogeneous audio formats")))))
+
+; The replaygain(1) command from python-rgain allows operating on all file
+; types.
+(define (replaygain/all files)
+  (apply run-command
+	 (append '("/usr/bin/replaygain" "-f") files)))
 
 (define (replaygain/ogg files)
   (apply run-command

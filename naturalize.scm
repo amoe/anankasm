@@ -55,7 +55,7 @@
            "not all files are writable, please fix and rerun")))
 
 (define (check-commands)
-  (let loop ((required-executables '("mp3gain" "vorbisgain" "eyeD3")))
+  (let loop ((required-executables '("replaygain" "eyeD3")))
     (when (not (null? required-executables))
       (let ((command (car required-executables)))
         (when (not (find-executable-path command))
