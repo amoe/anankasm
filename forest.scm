@@ -1,6 +1,6 @@
 #! /usr/bin/env mzscheme
 
-#lang scheme
+#lang racket
 
 (require srfi/1)
 (require srfi/26)

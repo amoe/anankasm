@@ -1,6 +1,6 @@
 #! /usr/bin/env mzscheme
 
-#lang scheme
+#lang racket
 
 (current-library-collection-paths
  (list (string->path "/home/amoe")))
