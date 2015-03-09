@@ -1,2 +1,4 @@
 TODO
 ====
+
+* Autoconf script needs to scan for taglib: `libtag_c.so.0`
