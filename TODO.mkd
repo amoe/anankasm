@@ -2,3 +2,4 @@ TODO
 ====
 
 * Autoconf script needs to scan for taglib: `libtag_c.so.0`
+* Translate scheme/* APIs from naturalize component into racket equivalents
