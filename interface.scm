@@ -27,7 +27,7 @@
 (define (pass-to-editor datum)
   (let ((path (make-temporary-file "naturalize-~a.scm")))
     (let ((out (open-output-file path #:exists 'truncate)))
-      (pretty-print datum out)
+      (pretty-write datum out)
       (close-output-port out)
       
       (run-editor path)

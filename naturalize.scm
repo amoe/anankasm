@@ -37,6 +37,7 @@
 
       (with-handlers ((exn:break? cleanup))
         (let ((tmpl (pass-to-editor (apply files->template args))))
+	  (printf "parsed template as ~s" tmpl)
           (strip-tags args)
           (apply-tags tmpl args)
 
@@ -85,7 +86,9 @@
               (local-tag-list)))
        args track-indices)))
 
-  (cons tags tracks))
+  (let ((result (cons tags tracks)))
+    (printf "using result: ~s" result)
+    result))
 
 
 
@@ -98,6 +101,9 @@
 
 (define (apply-tags tmpl files)
   (say "writing tags...")
+  
+  (printf "global tags are apparently ~s" (template:global-tags tmpl))
+
   (for-each
    (lambda (t) (apply-one-tag t files))
    (template:global-tags tmpl))
