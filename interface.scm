@@ -1,7 +1,7 @@
 #lang racket
 
-(require scheme/system)
-(require scheme/pretty)
+(require racket/system)
+(require racket/pretty)
 
 (require srfi/1)   ; why?
 

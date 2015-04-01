@@ -1,6 +1,6 @@
 #lang racket
 
-(require scheme/system)
+(require racket/system)
 (require srfi/1)
 (require srfi/26)
 
