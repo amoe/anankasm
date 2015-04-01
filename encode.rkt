@@ -30,19 +30,22 @@
 ; Requires sox.
 
 ; So where do we expect the output to appear?
-(define (encode input-directory output-directory)
+(define (encode input-directory output-directory
+                #:filter [wave? (make-extension-filter "wav")])
+  (printf "inside encode function\n")
   (let ((fixed-output (make-temporary-file "fixed-~a" 'directory)))
-    (fix-waves input-directory fixed-output)
+    (fix-waves input-directory fixed-output wave?)
     (flacize-files fixed-output output-directory)))
 
-(define (fix-waves input-directory output-directory)
+(define (fix-waves input-directory output-directory wave?)
   (for-each
    (lambda (path)
+     (printf "considering ~s\n" path)
      (fix-wave path (build-path output-directory
 				; This is kind of dumb as we unnecessarily
 				; remove and cat back on the extension.
 				(format "~a.wav" (basename path)))))
-     (filter (make-extension-filter "wav")
+     (filter wave?
 	     (sequence->list (in-directory input-directory)))))
 
 (define (fix-wave input-path output-path)
