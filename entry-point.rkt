@@ -9,10 +9,8 @@
    (rip "FOOBAR")
    (encode "/home/amoe/.anankasm/rip/FOOBAR" output)
    (delete-directory/files "/home/amoe/.anankasm/rip/FOOBAR"))
-  ((vector "tag" input)
-
-
-   (apply main (sequence->list (in-directory input))))
+  ((vector "tag" rest-of-stuff ...)
+   (apply main rest-of-stuff))
   (else
    (error 'something "die")))
    
