@@ -12,6 +12,6 @@
   ((vector "tag" rest-of-stuff ...)
    (apply naturalize:main rest-of-stuff))
   (else
-   (error 'something "die")))
+   (error 'entry-point "unable to understand desired action")))
    
 
