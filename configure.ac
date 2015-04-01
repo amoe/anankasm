@@ -13,6 +13,9 @@ AMOE_PATH_REQUIRED([REPLAYGAIN], [replaygain])
 #AMOE_PATH_REQUIRED([MP3GAIN], [mp3gain])
 AMOE_PATH_REQUIRED([EYED3], [eyeD3])
 
+AC_CHECK_LIB([tag_c], [taglib_tag_free_strings], [],
+  [AC_MSG_ERROR([The TagLib C binding is required to use anankasm])])
+
 AC_SUBST([RACKET])
 AC_CONFIG_FILES([anankasm.mk dist.scm])
 AC_OUTPUT

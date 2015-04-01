@@ -19,3 +19,5 @@ install:
 #@datarootdir@
 
 #@prefix@
+
+#@HAVE_LIBTAG_C@
