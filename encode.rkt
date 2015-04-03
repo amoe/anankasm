@@ -35,7 +35,8 @@
   (printf "inside encode function\n")
   (let ((fixed-output (make-temporary-file "fixed-~a" 'directory)))
     (fix-waves input-directory fixed-output wave?)
-    (flacize-files fixed-output output-directory)))
+    (flacize-files fixed-output output-directory)
+    (delete-directory/files fixed-output)))
 
 (define (fix-waves input-directory output-directory wave?)
   (for-each
