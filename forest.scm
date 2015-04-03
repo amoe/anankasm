@@ -11,7 +11,7 @@
 ;   make-parents creates dirs that do not have the mtime of their duplicates
 ;   no relative pathnames, must be absolute
 
-(define *sansa-size* 7955075072)
+(define *sansa-size* 1553367040)
 
 (define (gigabytes x)
   (* x (expt 2 30)))
