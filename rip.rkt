@@ -30,4 +30,4 @@
   (delete-directory/files (get-rip-path unique-id)))
 
 (define (get-rip-path unique-id)
-  (build-path "/home/amoe/.anankasm/rip" (~a unique-id)))
+  (build-path (find-system-path 'home-dir) ".anankasm" "rip" (~a unique-id)))
