@@ -12,7 +12,10 @@
 (define unique-id "FROM-TEST-SUITE")
 (define expected-output-path (build-path "/home/amoe/.anankasm/rip" unique-id))
 
+
+; CLEAN OUT DIRECTORY!
 (define (set-up)
+  (clean-previous-rip unique-id)
   (rip unique-id))
 
 (define (get-wavs-in-directory directory)
@@ -21,10 +24,18 @@
 (define (tear-down)
   (display "Cleaning up\n"))
 
+(define-test-suite anankasm/clean-previous-rip
+  (test-case
+   "Previous rip was cleaned"
+   (make-directory expected-output-path)
+   (close-output-port (open-output-file (build-path expected-output-path "somefile.wav")))
+   (clean-previous-rip unique-id)
+   (check-false (directory-exists? expected-output-path))))
+
 (define-test-suite anankasm/rip #:before set-up #:after tear-down
   (test-case
    "Output directory was created"
-   (directory-exists? expected-output-path))
+   (check-pred directory-exists? expected-output-path))
 
   (test-case
    "Track count matches TOC"

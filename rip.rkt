@@ -2,8 +2,10 @@
 
 (require racket/system)
 (require racket/format)
+(require racket/file)
 
-(provide rip)
+(provide rip
+	 clean-previous-rip)
 
 ; After rip finishes, a file should have been created under the backup
 ; destination.  It should contain the same number of tracks.
@@ -19,8 +21,13 @@
 
 
 (define (rip unique-id)
-  (let ((full-path (build-path "/home/amoe/.anankasm/rip" (~a unique-id))))
+  (let ((full-path (get-rip-path unique-id)))
     (let ((full-command (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)))
       (system/exit-code full-command))))
       
 			      
+(define (clean-previous-rip unique-id)
+  (delete-directory/files (get-rip-path unique-id)))
+
+(define (get-rip-path unique-id)
+  (build-path "/home/amoe/.anankasm/rip" (~a unique-id)))
