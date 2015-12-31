@@ -7,6 +7,8 @@
 	 racket/port
 	 racket/match
 	 racket/list
+	 racket/function
+	 racket/format
 	 "util.rkt")
 
 ; These are second order level test utilities and do not themselves have tests
@@ -21,7 +23,64 @@
 	 get-track-durations-from-cd-toc
 	 get-file-type-in-directory
 	 second->sector
-	 generate-tones)
+	 generate-tones
+	 make-dummy-wave
+	 make-cue-sheet
+	 load-dummy-cue-sheet
+	 clean-dummy-wave
+	 clean-cue-sheet
+	 unload-dummy-cue-sheet)
+
+
+(define (make-cue-sheet)
+  (with-output-to-file "mytoc.cue"
+    (thunk (display (generate-cue-sheet)))
+    #:exists 'truncate))
+
+(define (make-dummy-wave)
+  (let ((seconds-value (* 8 60)))
+    (system/checked
+     (format
+      "sox -n -c 2 -r 44100 -e signed-int -b 16 blah.wav trim 0.0 ~a"
+      seconds-value))))
+
+
+(define (load-dummy-cue-sheet)
+  (system/checked "cdemu load 0 mytoc.cue"))
+
+(define (clean-dummy-wave)
+  (delete-file "blah.wav"))
+
+(define (clean-cue-sheet)
+  (delete-file "mytoc.cue"))
+
+(define (unload-dummy-cue-sheet)
+  (system/checked "cdemu unload 0"))
+
+
+(define (generate-cue-sheet)
+  (let ((sep (string #\newline))
+	(n-tracks 8))
+    (string-join (map (lambda (n) (generate-track-statements n (- n 1)))
+		      (sequence->list (in-range 1 (+ n-tracks 1))))
+		 sep
+		 #:after-last sep
+		 #:before-first "FILE \"blah.wav\" WAVE\n")))
+
+(define (zero-pad n width)
+  (~a n
+      #:left-pad-string "0"
+      #:min-width width
+      #:align 'right))
+
+(define (generate-track-statements n ts)
+  (string-join 
+   (list
+    (format "TRACK ~a AUDIO" (zero-pad n 2))
+    (format "INDEX 01 ~a:00:00" (zero-pad ts 2)))
+   (string #\newline)))
+
+
 
 (define (generate-tones number
 			output-directory

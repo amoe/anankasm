@@ -3,6 +3,7 @@
 (require racket/system)
 (require racket/format)
 (require racket/file)
+(require "util.rkt")
 
 (provide rip
 	 clean-previous-rip)
@@ -23,7 +24,7 @@
 (define (rip unique-id)
   (let ((full-path (get-rip-path unique-id)))
     (let ((full-command (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)))
-      (system/exit-code full-command))))
+      (system/checked full-command))))
       
 			      
 (define (clean-previous-rip unique-id)
