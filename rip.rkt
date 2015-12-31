@@ -27,7 +27,9 @@
       
 			      
 (define (clean-previous-rip unique-id)
-  (delete-directory/files (get-rip-path unique-id)))
+  (let ((path (get-rip-path unique-id)))
+    (when (file-exists? path)    ; XXX: race condition
+      (delete-directory/files (get-rip-path unique-id)))))
 
 (define (get-rip-path unique-id)
   (build-path (find-system-path 'home-dir) ".anankasm" "rip" (~a unique-id)))
