@@ -28,7 +28,7 @@
 (define (generate-cue-sheet)
   (let ((sep (string #\newline))
 	(n-tracks 8))
-    (string-join (map (lambda (n) (generate-track-statements n n))
+    (string-join (map (lambda (n) (generate-track-statements n (- n 1)))
 		      (sequence->list (in-range 1 (+ n-tracks 1))))
 		 sep
 		 #:after-last sep
@@ -47,12 +47,28 @@
     (format "INDEX ~a ~a:00:00" (zero-pad n 2) (zero-pad ts 2)))
    (string #\newline)))
 
-(with-output-to-file "mytoc.toc"
-  (thunk (display (generate-cue-sheet)))
-  #:exists 'truncate)
+(define (generate-wave)
+  (let ((seconds-value (* 8 60)))
+    (system/checked
+     (format
+      "sox -n -c 2 -r 44100 -e signed-int -b 16 blah.wav trim 0.0 ~a"
+      seconds-value))))
 
-(system/checked "cdemu load 0 mytoc.toc")
 
+(define (main)
+  (with-output-to-file "mytoc.cue"
+    (thunk (display (generate-cue-sheet)))
+    #:exists 'truncate)
+
+  (printf "Generating fake waveform for CD... ")
+  (flush-output)
+  (generate-wave)
+  (printf "done.\n")
+
+  (system/checked "cdemu load 0 mytoc.cue")
+  (system/checked "cdemu unload 0"))
+
+(main)
 
 
 
