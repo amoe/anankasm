@@ -3,6 +3,7 @@
 (require racket/system)
 (require racket/format)
 (require racket/file)
+(require racket/match)
 (require "util.rkt")
 
 (provide rip
@@ -21,15 +22,23 @@
 ; The track times should match the timestamp specified by the CD TOC.
 
 
-(define (rip unique-id)
+(define (rip unique-id #:ripper [ripper 'morituri])
+  (clean-previous-rip unique-id)
+
   (let ((full-path (get-rip-path unique-id)))
-    (let ((full-command (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)))
+    (let ((full-command (determine-rip-command ripper full-path)))
       (system/checked full-command))))
+
+(define (determine-rip-command ripper full-path)
+  (match ripper
+    ['morituri (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)]
+    ['cdparanoia (format "mkdir ~a; cd ~a; cdparanoia -z -O 6 -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" full-path full-path)]
+    [_ (raise-argument-error 'determine-rip-command "valid ripper" ripper)]))
       
 			      
 (define (clean-previous-rip unique-id)
   (let ((path (get-rip-path unique-id)))
-    (when (file-exists? path)    ; XXX: race condition
+    (when (directory-exists? path)    ; XXX: race condition
       (delete-directory/files (get-rip-path unique-id)))))
 
 (define (get-rip-path unique-id)

@@ -3,6 +3,7 @@
 (require rackunit
 	 rackunit/text-ui
 	 racket/sequence
+	 racket/function
 	 "../rip.rkt"
          "../util.rkt"
 	 (prefix-in test-util: "../test-utility.rkt"))
@@ -39,6 +40,11 @@
    (close-output-port (open-output-file (build-path expected-output-path "somefile.wav")))
    (clean-previous-rip unique-id)
    (check-false (directory-exists? expected-output-path))))
+
+(define-test-suite anankasm/misc
+  (test-case
+   "Unknown ripper type throws error"
+   (check-exn exn:fail:contract? (thunk (rip unique-id #:ripper "nonesuch")))))
 
 ;; The main test suite for the ripper.
 ; We always need to save away all data from the CD toc before calling 'rip',
@@ -102,5 +108,7 @@
       (map normalize-second track-durations))))   
    (tear-down))))
 
-
-(run-tests anankasm/rip)
+(for-each run-tests
+	  (list anankasm/clean-previous-rip
+		anankasm/misc
+		anankasm/rip))
