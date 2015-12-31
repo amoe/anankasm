@@ -3,6 +3,7 @@
 #lang racket
 
 (require racket/string)
+(require "util.rkt")
 
 (define (is-linux?)
   (and (system-type 'os)
@@ -46,10 +47,16 @@
     (format "INDEX ~a ~a:00:00" (zero-pad n 2) (zero-pad ts 2)))
    (string #\newline)))
 
-;  (with-output-to-file "mytoc.toc"
-;    (thunk
-;     (write (apply
+(with-output-to-file "mytoc.toc"
+  (thunk (display (generate-cue-sheet)))
+  #:exists 'truncate)
 
+(system/checked "cdemu load 0 mytoc.toc")
+
+
+
+
+   
 
 
 

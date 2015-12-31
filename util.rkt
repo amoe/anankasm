@@ -3,7 +3,8 @@
 (provide basename
 	 shell-quote
 	 make-extension-filter
-         delete-directory/recursive)
+         delete-directory/recursive
+	 system/checked)
 
 (define (delete-directory/recursive path)
   #t)
@@ -38,3 +39,8 @@
   (let ((extension-as-bytes (string->bytes/utf-8 extension)))
     (lambda (path)
       (bytes=? (filename-extension path) extension-as-bytes))))
+
+(define (system/checked command)
+  (let ((result (system/exit-code command)))
+    (when (not (= result 0))
+      (raise-user-error "command failed with code" result))))
