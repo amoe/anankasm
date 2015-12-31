@@ -1,5 +1,6 @@
 TODO
 ====
 
+* Detect morituri error return
 * Translate scheme/* APIs from naturalize component into racket equivalents
 * Convert regular output to use logging system
