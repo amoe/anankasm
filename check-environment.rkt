@@ -27,10 +27,11 @@
 (define (generate-cue-sheet)
   (let ((sep (string #\newline))
 	(n-tracks 8))
-    (string-join (map number->string 
+    (string-join (map (lambda (n) (generate-track-statements n n))
 		      (sequence->list (in-range 1 (+ n-tracks 1))))
 		 sep
-		 #:after-last sep)))
+		 #:after-last sep
+		 #:before-first "FILE \"blah.wav\" WAVE\n")))
 
 (define (zero-pad n width)
   (~a n
@@ -39,14 +40,17 @@
       #:align 'right))
 
 (define (generate-track-statements n ts)
-  (printf "TRACK ~a AUDIO\n" (zero-pad n 2))
-  (printf "INDEX ~a ~a:00:00" (zero-pad n 2) (zero-pad ts 2)))
+  (string-join 
+   (list
+    (format "TRACK ~a AUDIO" (zero-pad n 2))
+    (format "INDEX ~a ~a:00:00" (zero-pad n 2) (zero-pad ts 2)))
+   (string #\newline)))
 
 ;  (with-output-to-file "mytoc.toc"
 ;    (thunk
 ;     (write (apply
 
-(generate-cue-sheet)
+
 
 
 
