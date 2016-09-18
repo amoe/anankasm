@@ -8,4 +8,17 @@ Have a wonderful day
 Instructions
 ------------
 
+Make sure racket is installed first.
+
+You need `replaygain(1)` tool which comes from the package `python-rgain`.
+
+You also need the `eyeD3` tool.
+
+You also need the libtag library which you can get with `libtagc0-dev`
+
     $ sh bootstrap.sh
+    $ ./configure
+    # make -f anankasm.mk install
+
+You can adjust the filename template that the command-line tool `naturalize`
+uses by modifying the source file `options.scm`.
