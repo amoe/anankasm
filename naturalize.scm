@@ -115,9 +115,7 @@
   (for-each
    (lambda (old new)
      (make-parents new)
-     
-     (with-handlers ((exn:fail:filesystem:exists? (const #t)))
-       (rename-file-or-directory old new)))    ; FIXME: only attempt move if !=
+     (rename-file-or-directory old new #t))    ; we don't care if it exists
    files (template->new-names tmpl files)))
 
 ; Make the parents of PATH
