@@ -21,7 +21,6 @@
 ; The tracks should be in WAV format.
 ; The track times should match the timestamp specified by the CD TOC.
 
-
 (define (rip unique-id #:ripper [ripper 'morituri])
   (clean-previous-rip unique-id)
 
@@ -31,8 +30,15 @@
 
 (define (determine-rip-command ripper full-path)
   (match ripper
-    ['morituri (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" full-path)]
-    ['cdparanoia (format "mkdir ~a; cd ~a; cdparanoia -z -O 6 -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" full-path full-path)]
+    ['morituri
+     (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" 
+             full-path)]
+    ['cdparanoia
+     (format "mkdir ~a; cd ~a; cdparanoia -z -O 6 -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" 
+             full-path full-path)]
+    ['whipper
+     (format "whipper cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav"
+             full-path)]
     [_ (raise-argument-error 'determine-rip-command "valid ripper" ripper)]))
       
 			      

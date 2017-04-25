@@ -12,14 +12,23 @@
     (or (wav? path) (flac? path))))
 
 (match (current-command-line-arguments)
+  ;; Rips with morituri using rip(1)
   ((vector "rip" output)
    (rip "FOOBAR")
    (encode "/home/amoe/.anankasm/rip/FOOBAR" output)
    (delete-directory/files "/home/amoe/.anankasm/rip/FOOBAR"))
+
+  ;; Rips with cdparanoia(1)
   ((vector "rip-cdparanoia" output)
    (rip "FOOBAR" #:ripper 'cdparanoia)
    (encode "/home/amoe/.anankasm/rip/FOOBAR" output)
    (delete-directory/files "/home/amoe/.anankasm/rip/FOOBAR"))
+
+  ((vector "rip-whipper" output)
+   (rip "FOOBAR" #:ripper 'whipper)
+   (encode "/home/amoe/.anankasm/rip/FOOBAR" output)
+   (delete-directory/files "/home/amoe/.anankasm/rip/FOOBAR"))
+
   ((vector "encode" flac-dir output-dir)
    (printf "Encoding\n")
    (encode flac-dir output-dir #:filter is-encodable?))
