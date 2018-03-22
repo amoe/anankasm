@@ -22,3 +22,23 @@ You also need the libtag library which you can get with `libtagc0-dev`
 
 You can adjust the filename template that the command-line tool `naturalize`
 uses by modifying the source file `options.scm`.
+
+## Usage
+
+You can use it from the source directory.  You need to run `entry-point.rkt`.
+
+The command-line syntax is as follows; to encode an existing group of files
+using appropriate settings, you do as follows:
+
+    racket entry-point.rkt encode SOURCE-DIR TARGET-DIR
+
+This is useful for when you have a lot of FLACs and want to merge them into
+your lossy collection.
+
+## Troubleshooting
+
+### `couldn't open "libtag_c.so.0"`
+
+Install `libtagc0-dev`.
+
+
