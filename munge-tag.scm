@@ -1,13 +1,12 @@
 #lang racket
 
-
 (require srfi/1)
 (require srfi/78)
 (provide munge-tag)
 
+;; Although the original pattern uses a large roman numeral, 
+;; string-downcase changes it to small.
 (define *re*
-					; Although the original pattern uses a large roman numeral,
-					; string-downcase changes it to small.
   '((#rx"\u25b2" . "a")    ; Triangle
     (#rx"\u039b" . "a")    ; Lambda
     (#rx"\u2665" . "heart")
@@ -28,9 +27,10 @@
     (#rx"\u00ff" . "y")
     (#rx"\u00e9" . "e")
     (#rx"\u00e7" . "c")
+    (#rx"\u00f1" . "n")
     (#rx" \u2014 " . "-")
-    (#rx"\u2212" . "_minus_")      ; Again, dodgy whitespace usage
-    (#rx"\u2192" . "maps_to")      ; Dodgy usage, but no issues yet
+    (#rx"\u2212" . "_minus_")      ;; Again, dodgy whitespace usage
+    (#rx"\u2192" . "maps_to")      ;; Dodgy usage, but no issues yet
     (#rx"%" . "_percent")
     (#rx"^\\?!$" . "interrobang")
     (#rx"\u0133" . "ij")
@@ -61,12 +61,12 @@
 	 => "boy_boy_boy")
   (check (munge-tag "Live: Mondo, Madrid, ES (2007-05-10)")
 	 => "live_mondo_madrid_es-2007-05-10")
-					; MODIFIER LETTER APOSTROPHE
+  ;; MODIFIER LETTER APOSTROPHE
   (check (munge-tag "97\u02BC Bonnie & Clyde")
 	 => "97_bonnie_and_clyde")
   (check (munge-tag "One Drop Of Water/Deep River")
 	 => "one_drop_of_water-deep_river")
-					; ROMAN NUMERAL TWO
+  ;; ROMAN NUMERAL TWO
   (check (munge-tag "Dead Meat \u2161")
 	 => "dead_meat_ii")
   (check (munge-tag "Sigur R\u00f3s")
@@ -98,15 +98,14 @@
   (check (munge-tag "Le Corps Mince De Fran\u00e7oise")
 	 => "le_corps_mince_de_francoise")
   (check (munge-tag "Climbing Up / “Iknimaya — The Path To Heaven”")
-	 => "le_corps_mince_de_francoise")
+	 => "climbing_up-iknimaya-the_path_to_heaven")
   (check (munge-tag "▲NDRΛS")
-	 => "andras"))
-
-
+	 => "andras")
+  (check (munge-tag "Ill Niño")
+         => "ill_nino"))
 
 (define (munge-tag tag)
-  (fold
-   (lambda (x y)
-     (regexp-replace* (old x) y (new x)))
-   (string-downcase tag)
-   *re*))
+  (fold (lambda (x y)
+          (regexp-replace* (old x) y (new x)))
+        (string-downcase tag)
+        *re*))
