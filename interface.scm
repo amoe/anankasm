@@ -7,21 +7,20 @@
 
 (require "options.scm")
 
-(provide
- run-command
- pass-to-editor
- choose
- say
- debug
- writable?
- xformat
- consume
- slurp-lines
- *default-eyed3*
- *default-mp3gain*)
+(provide run-command
+         pass-to-editor
+         choose
+         say
+         debug
+         writable?
+         xformat
+         consume
+         slurp-lines
+         *default-eyed3*
+         *default-mp3gain*)
 
 (define *default-editor* "/usr/bin/nano")
-(define *default-eyed3*    "/usr/bin/eyeD3")
+(define *default-eyed3*    "eyeD3")
 (define *default-mp3gain*  "/usr/bin/mp3gain")
 
 (define (pass-to-editor datum)
@@ -48,10 +47,16 @@
 (define (get-editor)
   (or (getenv "EDITOR") *default-editor*))
 
-(define (run-command . args)
-  (apply
-   (if (option 'verbose) system* system/silent*)
-   args))
+(define (with-process-error-handler result-value)
+  (when (not (= result-value 0))
+    (raise-user-error "command failed with code" result-value)))
+  
+(define (run-command command . args)
+  (let ((system-procedure (if (option 'verbose) system*/exit-code system/silent*)))
+    (with-process-error-handler
+     (apply system-procedure
+            (cons (find-executable-path command)
+                  args)))))
 
 ; NB:
 ; mp3gain(1) has a freakin' weird behaviour where unless you read the data from
@@ -66,7 +71,8 @@
     
     (close-input-port (first l))
     (close-output-port (second l))
-    (close-input-port (fourth l))))
+    (close-input-port (fourth l))
+    ((fifth l) 'exit-code)))
       
 (define (consume port)
   (let ((b (read-byte port)))

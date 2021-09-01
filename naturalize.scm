@@ -95,9 +95,8 @@
 (define (strip-tags args)
   (debug "stripping tags")
   (apply run-command
-         (cons *default-eyed3*
-               (cons "--remove-all"
-                     (cons "--no-color" args)))))
+         (append (list *default-eyed3* "--remove-all" "--no-color")
+                 args)))
 
 (define (apply-tags tmpl files)
   (say "writing tags...")

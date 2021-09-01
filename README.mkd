@@ -1,16 +1,25 @@
-Music tagger for disparate sources, old code half broken, needs PLT Scheme (now
-Racket) plus a bunch of external tools.
-
-Any existing docs are probably lies
+Music tagger for disparate sources, old code half broken, originally written for
+PLT Scheme (then ported to Racket) plus a bunch of external tools.
 
 Have a wonderful day
 
-Instructions
-------------
+## Instructions / Dependencies
+
+Anankasm depends on the following tools: racket, rgain, eyeD3, TagLib.
 
 Make sure racket is installed first.
 
-You need `replaygain(1)` tool which comes from the package `python-rgain`.
+This file used to read as follows:
+
+> You need `replaygain(1)` tool which comes from the package `python-rgain`.
+
+However, as of Debian Bullseye, `python-rgain` has been
+[removed](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=938361).
+
+A fork exists here: https://github.com/chaudum/rgain3
+
+So instead, you need to do `pip3 install rgain3==1.1.1`.
+
 
 You also need the `eyeD3` tool.
 
@@ -19,6 +28,8 @@ You also need the libtag library which you can get with `libtagc0-dev`
     $ sh bootstrap.sh
     $ ./configure
     # make -f anankasm.mk install
+
+## Configuration
 
 You can adjust the filename template that the command-line tool `naturalize`
 uses by modifying the source file `options.scm`.
@@ -35,10 +46,13 @@ using appropriate settings, you do as follows:
 This is useful for when you have a lot of FLACs and want to merge them into
 your lossy collection.
 
+You can also use naturalize from the entry point, eg,
+
+    racket entry-point.rkt tag -Vn *.ogg
+
+
 ## Troubleshooting
 
 ### `couldn't open "libtag_c.so.0"`
 
 Install `libtagc0-dev`.
-
-

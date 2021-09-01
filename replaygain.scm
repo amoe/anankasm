@@ -36,12 +36,11 @@
 ; types.
 (define (replaygain/all files)
   (apply run-command
-	 (append '("/usr/bin/replaygain" "-f") files)))
+         (append '("replaygain" "-f") files)))
 
 (define (replaygain/ogg files)
   (apply run-command
-        (append
-          '("/usr/bin/vorbisgain" "-a") files)))
+        (append '("vorbisgain" "-a") files)))
 
 ; Replaygain algorithm mk2
 (define (replaygain/mp3 files)
