@@ -37,7 +37,9 @@
      (format "mkdir ~a; cd ~a; cdparanoia -z -O 6 -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" 
              full-path full-path)]
     ['whipper
-     (format "whipper cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav"
+     ;; Whipper will auto-rip to FLAC after <https://github.com/whipper-team/whipper/pull/121>
+     ;; Needs fixing in anankasm.
+     (format "whipper cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template=''"
              full-path)]
     [_ (raise-argument-error 'determine-rip-command "valid ripper" ripper)]))
       

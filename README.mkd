@@ -56,3 +56,14 @@ You can also use naturalize from the entry point, eg,
 ### `couldn't open "libtag_c.so.0"`
 
 Install `libtagc0-dev`.
+
+
+## Bugs
+
+* The drive offset is hardcoded for the rip command, meaning it probably won't
+  be accurate for your drive.
+* Morituri support should probably be removed, as it looks dead.  Either
+  cdparanoia should be preferred.
+* Whipper have removed WAV output support from their tool, in a decision that
+  seems a bit strange.  So that support is probably at least semi-broken to
+  totally broken.
