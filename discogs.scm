@@ -70,7 +70,8 @@
 
 (define mp3gain "mp3gain")
 
-(define *api-key* "fc618f80ac")
+; This API key was expired a long time ago
+(define *api-key* "fc618f80ad")
 
 (define req
   (string-append "http://www.discogs.com/release/1?f=xml&api_key="
