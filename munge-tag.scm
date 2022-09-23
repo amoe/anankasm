@@ -7,7 +7,8 @@
 ;; Although the original pattern uses a large roman numeral, 
 ;; string-downcase changes it to small.
 (define *re*
-  '((#rx"\u25b2" . "a")    ; Triangle
+  '((#rx"\u00b5" . "mu")
+    (#rx"\u25b2" . "a")    ; Triangle
     (#rx"\u039b" . "a")    ; Lambda
     (#rx"\u2665" . "heart")
     (#rx"\u00a7" . "section")
@@ -57,6 +58,7 @@
 (define new cdr)
 
 (define (test)
+  (check (munge-tag "µ-Ziq") => "mu-ziq")
   (check (munge-tag "Boy, Boy, Boy")
 	 => "boy_boy_boy")
   (check (munge-tag "Live: Mondo, Madrid, ES (2007-05-10)")
