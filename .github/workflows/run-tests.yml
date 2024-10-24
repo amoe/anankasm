@@ -20,5 +20,5 @@ jobs:
 
       - name: Install Racket
         run: |
-          apt-get install racket
+          sudo apt-get install racket
           
