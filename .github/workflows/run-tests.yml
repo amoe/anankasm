@@ -21,4 +21,8 @@ jobs:
       - name: Install Racket
         run: |
           sudo apt-get install racket
+
+      - name: Run tests
+        run: |
+          raco test -m test
           
