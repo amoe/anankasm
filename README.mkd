@@ -67,3 +67,11 @@ Install `libtagc0-dev`.
 * Whipper have removed WAV output support from their tool, in a decision that
   seems a bit strange.  So that support is probably at least semi-broken to
   totally broken.
+
+## Run tests
+
+To run the tests, use:
+
+    raco test test
+
+This will run all the tests under the `test` subdirectory.
