@@ -18,9 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Racket
+      - name: Install apt dependencies
         run: |
-          sudo apt-get install racket
+          sudo apt-get install racket sox
 
       - name: Run tests
         run: |
