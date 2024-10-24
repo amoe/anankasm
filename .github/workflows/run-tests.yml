@@ -20,7 +20,7 @@ jobs:
 
       - name: Install apt dependencies
         run: |
-          sudo apt-get install racket sox
+          sudo apt-get install racket sox vorbis-tools
 
       - name: Run tests
         run: |
