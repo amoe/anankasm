@@ -18,6 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Run something
+      - name: Install Racket
         run: |
-          echo "Hello, world!"
+          apt-get install racket
+          
