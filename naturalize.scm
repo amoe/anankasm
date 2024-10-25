@@ -47,8 +47,9 @@
             (replaygain args))
 	  (say "done.")
         
-          (load-mtimes args times)
-          (move-files tmpl args))))))
+          (let ((new-names (template->new-names tmpl args)))
+            (move-files args new-names)
+            (load-mtimes new-names times)))))))
 
 (define (check-permissions lst)
   (when (not (every writable? lst))
@@ -109,13 +110,14 @@
 
   (apply-local-tags (template:local-tags tmpl) files))
 
-(define (move-files tmpl files)
+(define (move-files files new-names)
   (debug "moving files to correct locations")
-  (for-each
-   (lambda (old new)
-     (make-parents new)
-     (rename-file-or-directory old new #t))    ; we don't care if it exists
-   files (template->new-names tmpl files)))
+  (for-each (lambda (old new)
+              (make-parents new)
+              (copy-file old new #t)
+              (delete-file old))
+            files
+            new-names))
 
 ; Make the parents of PATH
 (define (make-parents path)
