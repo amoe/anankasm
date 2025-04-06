@@ -21,21 +21,22 @@
 ; The tracks should be in WAV format.
 ; The track times should match the timestamp specified by the CD TOC.
 
-(define (rip unique-id #:ripper [ripper 'morituri])
+(define (rip unique-id #:ripper [ripper 'cdparanoia])
   (clean-previous-rip unique-id)
 
   (let ((full-path (get-rip-path unique-id)))
     (let ((full-command (determine-rip-command ripper full-path)))
       (system/checked full-command))))
 
+; Pioneer BDR-XD07TB
+; See <https://www.accuraterip.com/driveoffsets.htm>
+(define *drive-offset* 667)
+
 (define (determine-rip-command ripper full-path)
   (match ripper
-    ['morituri
-     (format "rip cd rip -o 6 -U -O '~a' --track-template='%t' --disc-template='' --profile=wav" 
-             full-path)]
     ['cdparanoia
-     (format "mkdir ~a; cd ~a; cdparanoia -z -O 6 -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" 
-             full-path full-path)]
+     (format "mkdir ~a; cd ~a; cdparanoia -z -O ~a -B; rename -e 's/^track//;' -e 's/\\.cdda\\.wav/.wav/;' *.wav" 
+             full-path full-path *drive-offset*)]
     ['whipper
      ;; Whipper will auto-rip to FLAC after <https://github.com/whipper-team/whipper/pull/121>
      ;; Needs fixing in anankasm.
