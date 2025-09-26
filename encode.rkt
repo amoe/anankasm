@@ -29,14 +29,20 @@
 ; Will also fix files that need to be downsampled.
 ; Requires sox.
 
-; So where do we expect the output to appear?
+(define (is-uncompressed-audio? path)
+  (or ((make-extension-filter "wav") path)
+      ((make-extension-filter "aiff") path)))
+
+
+;; Returns the result files.
 (define (encode input-directory output-directory
-                #:filter [wave? (make-extension-filter "wav")])
+                #:filter [wave? is-uncompressed-audio?])
   (printf "inside encode function\n")
   (let ((fixed-output (make-temporary-file "fixed-~a" 'directory)))
     (fix-waves input-directory fixed-output wave?)
-    (flacize-files fixed-output output-directory)
-    (delete-directory/files fixed-output)))
+    (let ((result-files (flacize-files fixed-output output-directory)))
+      (delete-directory/files fixed-output)
+      result-files)))
 
 (define (fix-waves input-directory output-directory wave?)
   (for-each
@@ -58,13 +64,15 @@
       (error 'fix-wave "conversion subprocess failed with code ~a" result))))
 
 (define (flacize-files input-directory output-directory)
-  (for-each
-   (lambda (path)
-     (flacize-single-file path (build-path output-directory
-				(format "~a.~a"
-					(basename path)
-					(encode-format-extension (default-encode-format))))))
-     (sequence->list (in-directory input-directory))))
+  (let ((input-files (sequence->list (in-directory input-directory))))
+    (let ((output-files (map (lambda (path)
+                               (build-path output-directory
+                                           (format "~a.~a"
+                                                   (basename path)
+                                                   (encode-format-extension (default-encode-format)))))
+                             input-files)))
+      (for-each flacize-single-file input-files output-files)
+      output-files)))
 
 (define (flacize-single-file input-file output-file)
   (let ((command (format (encode-format-encode-command (default-encode-format))

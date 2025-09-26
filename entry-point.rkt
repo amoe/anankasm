@@ -30,6 +30,11 @@
    (printf "about to naturalize\n")
    (apply naturalize:main rest-of-stuff)
    (printf "finished naturalizing\n"))
+  ((vector "encode-and-tag-single-artist" dir)
+   (let ((temporary-directory (make-temporary-directory)))
+     (let ((output-files (encode dir temporary-directory)))
+       (apply naturalize:main (cons "--number-automatically"
+                                    (map path->string output-files))))))
   (else
    (error 'entry-point "unable to understand desired action")))
    
