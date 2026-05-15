@@ -32,8 +32,8 @@
   (let ((args (configure args)))
     (check-permissions args)
 
-    (let ((times (save-mtimes args)))
-      (define (cleanup v)  (load-mtimes args times))
+    (let ((times (get-existing-mtimes args)))
+      (define (cleanup v)  (apply-mtimes args times))
 
       (with-handlers ((exn:break? cleanup))
         (let ((tmpl (pass-to-editor (apply files->template args))))
@@ -49,7 +49,7 @@
         
           (let ((new-names (template->new-names tmpl args)))
             (move-files args new-names)
-            (load-mtimes new-names times)))))))
+            (apply-mtimes new-names times)))))))
 
 (define (check-permissions lst)
   (when (not (every writable? lst))
@@ -114,8 +114,14 @@
   (debug "moving files to correct locations")
   (for-each (lambda (old new)
               (make-parents new)
-              (copy-file old new #t)
-              (delete-file old))
+              ; Resolve path because we don't want to move it unnecessarily.
+              ; The old path may be relative, so we need to make sure both are
+              ; absolute in order to make it a fair comparison.
+              (let ((x (path->complete-path old))
+                    (y (path->complete-path new)))
+                (when (not (equal? x y)) 
+                  (copy-file old new #t)
+                  (delete-file old))))
             files
             new-names))
 
@@ -204,10 +210,10 @@
   (cddr (assq tag *tag-map*)))
 
 
-(define (save-mtimes files)
+(define (get-existing-mtimes files)
   (map file-or-directory-modify-seconds files))
 
-(define (load-mtimes files times)
+(define (apply-mtimes files times)
   (for-each file-or-directory-modify-seconds files times))
 
 (define (just-one? lst) (= (length lst) 1))
