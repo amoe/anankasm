@@ -73,3 +73,6 @@ To run the tests, use:
     raco test test
 
 This will run all the tests under the `test` subdirectory.
+
+The tests use [CDEmu](https://cdemu.sourceforge.io/project/#download) which
+needs to be installed in the test environment.
